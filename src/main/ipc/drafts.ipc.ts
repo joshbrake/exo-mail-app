@@ -171,7 +171,10 @@ FORMATTING: Write plain text paragraphs separated by blank lines. Do NOT use HTM
   // Rerun agent draft for a single email
   ipcMain.handle(
     "drafts:rerun-agent",
-    async (_, { emailId }: { emailId: string }): Promise<IpcResponse<{ taskId: string }>> => {
+    async (
+      _,
+      { emailId, instructions }: { emailId: string; instructions?: string },
+    ): Promise<IpcResponse<{ taskId: string }>> => {
       if (useFakeData) {
         return { success: false, error: "Agent drafting is not available in demo/test mode" };
       }
@@ -217,7 +220,13 @@ FORMATTING: Write plain text paragraphs separated by blank lines. Do NOT use HTM
           return { success: false, error: "Could not build draft context" };
         }
 
-        const { prompt, context, taskId } = draftInfo;
+        let { prompt } = draftInfo;
+        const { context, taskId } = draftInfo;
+
+        // Prepend user instructions to the agent prompt if provided
+        if (instructions?.trim()) {
+          prompt = `USER INSTRUCTIONS: ${instructions.trim()}\n\n${prompt}`;
+        }
 
         // Track in prefetch service BEFORE launching so a concurrent rerun
         // can find and cancel this agent via getActiveAgentTaskId

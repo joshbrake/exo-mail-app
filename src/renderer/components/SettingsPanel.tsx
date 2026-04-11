@@ -35,24 +35,23 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab ?? "general");
 
-  // Account management state
-  const {
-    accounts,
-    setAccounts,
-    removeAccount: removeAccountFromStore,
-    prefetchProgress,
-    themePreference,
-    setThemePreference,
-    setResolvedTheme,
-    inboxDensity,
-    setInboxDensity,
-    keyboardBindings,
-    setKeyboardBindings,
-    undoSendDelaySeconds,
-    setUndoSendDelay,
-    currentAccountId,
-    highlightMemoryIds,
-  } = useAppStore();
+  // Account management state — use individual selectors to avoid re-rendering
+  // on every unrelated store change (sync events, email updates, prefetch ticks).
+  const accounts = useAppStore((s) => s.accounts);
+  const setAccounts = useAppStore((s) => s.setAccounts);
+  const removeAccountFromStore = useAppStore((s) => s.removeAccount);
+  const prefetchProgress = useAppStore((s) => s.prefetchProgress);
+  const themePreference = useAppStore((s) => s.themePreference);
+  const setThemePreference = useAppStore((s) => s.setThemePreference);
+  const setResolvedTheme = useAppStore((s) => s.setResolvedTheme);
+  const inboxDensity = useAppStore((s) => s.inboxDensity);
+  const setInboxDensity = useAppStore((s) => s.setInboxDensity);
+  const keyboardBindings = useAppStore((s) => s.keyboardBindings);
+  const setKeyboardBindings = useAppStore((s) => s.setKeyboardBindings);
+  const undoSendDelaySeconds = useAppStore((s) => s.undoSendDelaySeconds);
+  const setUndoSendDelay = useAppStore((s) => s.setUndoSendDelay);
+  const currentAccountId = useAppStore((s) => s.currentAccountId);
+  const highlightMemoryIds = useAppStore((s) => s.highlightMemoryIds);
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [addAccountPhase, setAddAccountPhase] = useState("Connecting...");
   const [accountError, setAccountError] = useState<string | null>(null);
@@ -81,6 +80,10 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
 
   // General settings state
   const [enableSenderLookup, setEnableSenderLookup] = useState(true);
+  const [autoDraftEnabled, setAutoDraftEnabled] = useState(true);
+  const [autoDraftPriorities, setAutoDraftPriorities] = useState<
+    Array<"high" | "medium" | "low">
+  >(["high", "medium", "low"]);
   const [modelConfig, setModelConfig] = useState<ModelConfig>(DEFAULT_MODEL_CONFIG);
   const [isSavingGeneral, setIsSavingGeneral] = useState(false);
   const [isExportingLogs, setIsExportingLogs] = useState(false);
@@ -225,6 +228,8 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
   useEffect(() => {
     if (generalConfig) {
       setEnableSenderLookup(generalConfig.enableSenderLookup ?? true);
+      setAutoDraftEnabled(generalConfig.autoDraft?.enabled ?? true);
+      setAutoDraftPriorities(generalConfig.autoDraft?.priorities ?? ["high", "medium", "low"]);
       setModelConfig({ ...DEFAULT_MODEL_CONFIG, ...generalConfig.modelConfig });
       setGithubToken(generalConfig.githubToken ?? "");
       setAllowPrereleaseUpdates(generalConfig.allowPrereleaseUpdates ?? false);
@@ -380,6 +385,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
     try {
       await window.api.settings.set({
         enableSenderLookup,
+        autoDraft: { enabled: autoDraftEnabled, priorities: autoDraftPriorities },
         modelConfig,
         githubToken: githubToken || undefined,
         allowPrereleaseUpdates,
@@ -1331,44 +1337,101 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 </div>
               </div>
 
-              {/* Sender Lookup Toggle */}
+              {/* AI Features */}
               <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600 mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                      Sender Lookup
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      When generating a draft, search the web for information about the sender to
-                      provide better context.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setEnableSenderLookup(!enableSenderLookup)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      enableSenderLookup
-                        ? "bg-blue-600 dark:bg-blue-500"
-                        : "bg-gray-200 dark:bg-gray-700"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        enableSenderLookup ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">AI Features</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Control which AI features run automatically. Disabled features can still be
+                    triggered manually.
+                  </p>
                 </div>
 
-                {enableSenderLookup && (
-                  <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg text-sm text-blue-800 dark:text-blue-300">
-                    <p className="font-medium mb-1">How it works:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>Uses Claude's web search to find information about the sender</li>
-                      <li>Results are cached for the session to avoid repeated lookups</li>
-                      <li>Includes professional background and context in the draft prompt</li>
-                    </ul>
+                <div className="space-y-4">
+                  {/* Auto-Draft Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        Auto-Generate Drafts
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Automatically generate reply drafts for incoming emails. When off, use
+                        "Generate Draft" manually.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setAutoDraftEnabled(!autoDraftEnabled)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
+                        autoDraftEnabled
+                          ? "bg-blue-600 dark:bg-blue-500"
+                          : "bg-gray-200 dark:bg-gray-700"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          autoDraftEnabled ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
                   </div>
-                )}
+
+                  {/* Auto-Draft Priority Filter */}
+                  {autoDraftEnabled && (
+                    <div className="ml-4 pl-4 border-l-2 border-gray-200 dark:border-gray-600">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Auto-draft for these priority levels:
+                      </p>
+                      <div className="flex gap-3">
+                        {(["high", "medium", "low"] as const).map((priority) => (
+                          <label
+                            key={priority}
+                            className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={autoDraftPriorities.includes(priority)}
+                              onChange={() => {
+                                setAutoDraftPriorities((prev) =>
+                                  prev.includes(priority)
+                                    ? prev.filter((p) => p !== priority)
+                                    : [...prev, priority],
+                                );
+                              }}
+                              className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="capitalize">{priority}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sender Lookup Toggle */}
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        Sender Lookup
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Search the web for sender context when generating drafts.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setEnableSenderLookup(!enableSenderLookup)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
+                        enableSenderLookup
+                          ? "bg-blue-600 dark:bg-blue-500"
+                          : "bg-gray-200 dark:bg-gray-700"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          enableSenderLookup ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Troubleshooting */}
@@ -1443,54 +1506,178 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                     No accounts connected. Click "Add Account" to connect your first Gmail account.
                   </div>
                 ) : (
-                  accounts.map((account) => (
-                    <div key={account.id} className="p-4 flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-3 h-3 rounded-full ${account.isConnected ? "bg-green-500" : "bg-gray-400 dark:bg-gray-500"}`}
-                        />
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-gray-100">
-                            {account.email}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {account.isPrimary && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-800/60 text-blue-800 dark:text-blue-200 mr-2">
-                                Primary
-                              </span>
-                            )}
-                            {account.isConnected ? "Connected" : "Disconnected"}
+                  accounts.map((account, index) => (
+                    <div key={account.id} className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          {/* Reorder buttons */}
+                          {accounts.length > 1 && (
+                            <div className="flex flex-col -space-y-0.5">
+                              <button
+                                onClick={() => {
+                                  if (index === 0) return;
+                                  const reordered = [...accounts];
+                                  [reordered[index - 1], reordered[index]] = [
+                                    reordered[index],
+                                    reordered[index - 1],
+                                  ];
+                                  setAccounts(reordered);
+                                  window.api.accounts.reorder(reordered.map((a) => a.id));
+                                }}
+                                disabled={index === 0}
+                                className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-20 disabled:cursor-default transition-colors"
+                                title="Move up"
+                              >
+                                <svg
+                                  className="w-3.5 h-3.5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 15l7-7 7 7"
+                                  />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (index === accounts.length - 1) return;
+                                  const reordered = [...accounts];
+                                  [reordered[index], reordered[index + 1]] = [
+                                    reordered[index + 1],
+                                    reordered[index],
+                                  ];
+                                  setAccounts(reordered);
+                                  window.api.accounts.reorder(reordered.map((a) => a.id));
+                                }}
+                                disabled={index === accounts.length - 1}
+                                className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-20 disabled:cursor-default transition-colors"
+                                title="Move down"
+                              >
+                                <svg
+                                  className="w-3.5 h-3.5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 9l-7 7-7-7"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                          <div
+                            className={`w-3 h-3 rounded-full flex-shrink-0 ${!account.color ? (account.isConnected ? "bg-green-500" : "bg-gray-400 dark:bg-gray-500") : ""}`}
+                            style={account.color ? { backgroundColor: account.color } : undefined}
+                          />
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-gray-100">
+                              {account.email}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {account.isPrimary && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-800/60 text-blue-800 dark:text-blue-200 mr-2">
+                                  Primary
+                                </span>
+                              )}
+                              {account.isConnected ? "Connected" : "Disconnected"}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {!account.isPrimary && (
+                        <div className="flex items-center space-x-2">
+                          {!account.isPrimary && (
+                            <button
+                              onClick={() => handleSetPrimary(account.id)}
+                              className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                            >
+                              Set as Primary
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleSetPrimary(account.id)}
-                            className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                            onClick={() => handleRemoveAccount(account.id)}
+                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            title="Remove account"
                           >
-                            Set as Primary
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
                           </button>
-                        )}
-                        <button
-                          onClick={() => handleRemoveAccount(account.id)}
-                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          title="Remove account"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
+                        </div>
+                      </div>
+                      {/* Account appearance: label and color */}
+                      <div className="flex items-center gap-3 pl-6">
+                        <label className="text-xs text-gray-500 dark:text-gray-400 w-10">
+                          Label
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={account.email.split("@")[0]}
+                          defaultValue={account.label || ""}
+                          onBlur={(e) => {
+                            const newLabel = e.target.value.trim() || null;
+                            if (newLabel !== (account.label || null)) {
+                              window.api.accounts.updateAppearance(account.id, { label: newLabel });
+                              setAccounts(
+                                accounts.map((a) =>
+                                  a.id === account.id ? { ...a, label: newLabel || undefined } : a,
+                                ),
+                              );
+                            }
+                          }}
+                          className="flex-1 max-w-[160px] px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                        />
+                        <label className="text-xs text-gray-500 dark:text-gray-400 w-10">
+                          Color
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={account.color || "#6366f1"}
+                            onChange={(e) => {
+                              const newColor = e.target.value;
+                              window.api.accounts.updateAppearance(account.id, { color: newColor });
+                              setAccounts(
+                                accounts.map((a) =>
+                                  a.id === account.id ? { ...a, color: newColor } : a,
+                                ),
+                              );
+                            }}
+                            className="w-6 h-6 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
+                          />
+                          {account.color && (
+                            <button
+                              onClick={() => {
+                                window.api.accounts.updateAppearance(account.id, { color: null });
+                                setAccounts(
+                                  accounts.map((a) =>
+                                    a.id === account.id ? { ...a, color: undefined } : a,
+                                  ),
+                                );
+                              }}
+                              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                              title="Reset color"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
