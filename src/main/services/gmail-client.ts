@@ -154,6 +154,11 @@ export class GmailClient {
     return this.accountId;
   }
 
+  /** Whether this client has a live Gmail API connection (connect() succeeded). */
+  isConnected(): boolean {
+    return this.gmail !== null;
+  }
+
   /** Cancel an in-progress OAuth flow (e.g. user closed the browser window and wants to retry). */
   abortOAuth(): void {
     if (this.pendingOAuthServer) {

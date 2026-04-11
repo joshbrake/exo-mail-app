@@ -423,6 +423,37 @@ const NUMBERED_MIGRATIONS: Migration[] = [
       }
     },
   },
+  {
+    version: 3,
+    name: "add_account_color_and_label",
+    up: (db) => {
+      const cols = db.prepare("PRAGMA table_info(accounts)").all() as Array<{ name: string }>;
+      if (!cols.some((c) => c.name === "color")) {
+        db.exec("ALTER TABLE accounts ADD COLUMN color TEXT");
+      }
+      if (!cols.some((c) => c.name === "label")) {
+        db.exec("ALTER TABLE accounts ADD COLUMN label TEXT");
+      }
+    },
+  },
+  {
+    version: 4,
+    name: "add_account_sort_order",
+    up: (db) => {
+      const cols = db.prepare("PRAGMA table_info(accounts)").all() as Array<{ name: string }>;
+      if (!cols.some((c) => c.name === "sort_order")) {
+        db.exec("ALTER TABLE accounts ADD COLUMN sort_order INTEGER DEFAULT 0");
+        // Backfill: set sort_order to match current added_at ordering
+        const rows = db.prepare("SELECT id FROM accounts ORDER BY added_at ASC").all() as Array<{
+          id: string;
+        }>;
+        const update = db.prepare("UPDATE accounts SET sort_order = ? WHERE id = ?");
+        for (let i = 0; i < rows.length; i++) {
+          update.run(i, rows[i].id);
+        }
+      }
+    },
+  },
 ];
 
 function runNumberedMigrations(db: DatabaseInstance): void {
@@ -2036,6 +2067,8 @@ export type AccountRecord = {
   displayName?: string;
   isPrimary: boolean;
   addedAt: number;
+  color?: string;
+  label?: string;
 };
 
 export function saveAccount(
@@ -2055,7 +2088,7 @@ export function saveAccount(
 export function getAccounts(): AccountRecord[] {
   const db = getDatabase();
   const stmt = db.prepare(
-    "SELECT id, email, display_name as displayName, is_primary as isPrimary, added_at as addedAt FROM accounts ORDER BY added_at ASC",
+    "SELECT id, email, display_name as displayName, is_primary as isPrimary, added_at as addedAt, color, label FROM accounts ORDER BY sort_order ASC, added_at ASC",
   );
   const rows = stmt.all() as Array<{
     id: string;
@@ -2063,6 +2096,8 @@ export function getAccounts(): AccountRecord[] {
     displayName: string | null;
     isPrimary: number;
     addedAt: number;
+    color: string | null;
+    label: string | null;
   }>;
   return rows.map((row) => ({
     id: row.id,
@@ -2070,12 +2105,38 @@ export function getAccounts(): AccountRecord[] {
     displayName: row.displayName || undefined,
     isPrimary: Boolean(row.isPrimary),
     addedAt: row.addedAt,
+    color: row.color || undefined,
+    label: row.label || undefined,
   }));
 }
 
 export function updateAccountDisplayName(accountId: string, displayName: string): void {
   const db = getDatabase();
   db.prepare("UPDATE accounts SET display_name = ? WHERE id = ?").run(displayName, accountId);
+}
+
+export function updateAccountAppearance(
+  accountId: string,
+  opts: { color?: string | null; label?: string | null },
+): void {
+  const db = getDatabase();
+  if (opts.color !== undefined) {
+    db.prepare("UPDATE accounts SET color = ? WHERE id = ?").run(opts.color, accountId);
+  }
+  if (opts.label !== undefined) {
+    db.prepare("UPDATE accounts SET label = ? WHERE id = ?").run(opts.label, accountId);
+  }
+}
+
+export function updateAccountOrder(accountIds: string[]): void {
+  const db = getDatabase();
+  const update = db.prepare("UPDATE accounts SET sort_order = ? WHERE id = ?");
+  const run = db.transaction(() => {
+    for (let i = 0; i < accountIds.length; i++) {
+      update.run(i, accountIds[i]);
+    }
+  });
+  run();
 }
 
 export function removeAccount(accountId: string): void {

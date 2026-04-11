@@ -72,6 +72,8 @@ export interface UseComposeFormOptions {
   replyToEmailId?: string;
   /** Source for auto-loading forwarded attachments */
   forwardAttachmentSource?: { emailId: string; accountId: string };
+  /** All accounts — when provided, FromSelector shows addresses from all accounts */
+  allAccounts?: Array<{ id: string; email: string }>;
 }
 
 export interface ComposeFormState {
@@ -96,6 +98,7 @@ export function useComposeForm({
   composeMode: explicitComposeMode,
   replyToEmailId,
   forwardAttachmentSource,
+  allAccounts,
 }: UseComposeFormOptions) {
   const composeMode = explicitComposeMode ?? (isForward ? "forward" : replyInfo ? "reply" : "new");
   // --- Address state ---
@@ -134,65 +137,101 @@ export function useComposeForm({
   // --- Send-as aliases ---
   const [sendAsAliases, setSendAsAliases] = useState<SendAsAlias[]>([]);
   const [from, setFrom] = useState<string | undefined>(undefined);
+  // Maps lowercase email → accountId for cross-account from selection
+  const [aliasAccountMap, setAliasAccountMap] = useState<Map<string, string>>(new Map());
+  const [effectiveAccountId, setEffectiveAccountId] = useState(accountId);
 
-  // Fetch aliases on mount
+  // When "from" changes, update the effective accountId
+  useEffect(() => {
+    if (!from) {
+      setEffectiveAccountId(accountId);
+      return;
+    }
+    const fromEmail = extractBareEmail(from).toLowerCase();
+    const mapped = aliasAccountMap.get(fromEmail);
+    if (mapped) {
+      setEffectiveAccountId(mapped);
+    }
+  }, [from, aliasAccountMap, accountId]);
+
+  // Fetch aliases on mount — for all accounts when allAccounts is provided
   useEffect(() => {
     if (typeof window.api.compose.getSendAsAliases !== "function") return;
 
-    (window.api.compose.getSendAsAliases(accountId) as Promise<IpcResponse<SendAsAlias[]>>)
-      .then((result) => {
-        if (result.success && result.data.length > 0) {
-          setSendAsAliases(result.data);
+    const accountsToFetch =
+      allAccounts && allAccounts.length > 1 ? allAccounts : [{ id: accountId, email: "" }];
 
-          // Smart reply default: auto-select the alias that the original email was sent to.
-          // replyInfo.to/cc only has the REPLY addresses (original sender for plain reply),
-          // so we also check the original email's To/CC from the store — that's where
-          // the user's alias appears as a recipient.
-          if (replyInfo) {
-            const replyRecipients = [...(replyInfo.to || []), ...(replyInfo.cc || [])].map((addr) =>
-              extractBareEmail(addr).toLowerCase(),
-            );
+    Promise.all(
+      accountsToFetch.map((acct) =>
+        (window.api.compose.getSendAsAliases(acct.id) as Promise<IpcResponse<SendAsAlias[]>>)
+          .then((result) => ({
+            accountId: acct.id,
+            email: acct.email,
+            aliases: result.success ? result.data : [],
+          }))
+          .catch(() => ({ accountId: acct.id, email: acct.email, aliases: [] as SendAsAlias[] })),
+      ),
+    ).then((results) => {
+      const allAliases: SendAsAlias[] = [];
+      const newAliasAccountMap = new Map<string, string>();
 
-            // Also check the original email's recipients (covers plain reply)
-            const originalEmail = replyToEmailId
-              ? useAppStore.getState().emails.find((e) => e.id === replyToEmailId)
-              : undefined;
-            const originalRecipients = originalEmail
-              ? [
-                  ...(originalEmail.to || "").split(",").map((s) => s.trim()),
-                  ...(originalEmail.cc || "").split(",").map((s) => s.trim()),
-                ].map((addr) => extractBareEmail(addr).toLowerCase())
-              : [];
-
-            const allRecipients = [...replyRecipients, ...originalRecipients];
-            const matchingAlias = result.data.find((a) =>
-              allRecipients.includes(a.email.toLowerCase()),
-            );
-            if (matchingAlias) {
-              setFrom(
-                matchingAlias.displayName
-                  ? `${matchingAlias.displayName} <${matchingAlias.email}>`
-                  : matchingAlias.email,
-              );
-              return;
-            }
+      for (const { accountId: acctId, email: acctEmail, aliases } of results) {
+        if (aliases.length > 0) {
+          for (const alias of aliases) {
+            allAliases.push(alias);
+            newAliasAccountMap.set(alias.email.toLowerCase(), acctId);
           }
-
-          // Default to the default alias
-          const defaultAlias = result.data.find((a) => a.isDefault);
-          if (defaultAlias) {
-            setFrom(
-              defaultAlias.displayName
-                ? `${defaultAlias.displayName} <${defaultAlias.email}>`
-                : defaultAlias.email,
-            );
-          }
+        } else if (acctEmail) {
+          // No aliases from API — use the account email as a basic alias
+          allAliases.push({ email: acctEmail, isDefault: acctId === accountId });
+          newAliasAccountMap.set(acctEmail.toLowerCase(), acctId);
         }
-      })
-      .catch(() => {
-        // Silently fail — compose still works without aliases
-      });
-  }, [accountId]);
+      }
+
+      if (allAliases.length === 0) return;
+
+      setSendAsAliases(allAliases);
+      setAliasAccountMap(newAliasAccountMap);
+
+      // Smart reply default: auto-select the alias that the original email was sent to.
+      if (replyInfo) {
+        const replyRecipients = [...(replyInfo.to || []), ...(replyInfo.cc || [])].map((addr) =>
+          extractBareEmail(addr).toLowerCase(),
+        );
+
+        const originalEmail = replyToEmailId
+          ? useAppStore.getState().emails.find((e) => e.id === replyToEmailId)
+          : undefined;
+        const originalRecipients = originalEmail
+          ? [
+              ...(originalEmail.to || "").split(",").map((s) => s.trim()),
+              ...(originalEmail.cc || "").split(",").map((s) => s.trim()),
+            ].map((addr) => extractBareEmail(addr).toLowerCase())
+          : [];
+
+        const allRecipients = [...replyRecipients, ...originalRecipients];
+        const matchingAlias = allAliases.find((a) => allRecipients.includes(a.email.toLowerCase()));
+        if (matchingAlias) {
+          setFrom(
+            matchingAlias.displayName
+              ? `${matchingAlias.displayName} <${matchingAlias.email}>`
+              : matchingAlias.email,
+          );
+          return;
+        }
+      }
+
+      // Default to the default alias for the primary accountId
+      const defaultAlias = allAliases.find((a) => a.isDefault);
+      if (defaultAlias) {
+        setFrom(
+          defaultAlias.displayName
+            ? `${defaultAlias.displayName} <${defaultAlias.email}>`
+            : defaultAlias.email,
+        );
+      }
+    });
+  }, [accountId, allAccounts]);
 
   // --- Send state ---
   const [isSending, setIsSending] = useState(false);
@@ -319,7 +358,7 @@ export function useComposeForm({
     const recipientNames = nameMap.size > 0 ? Object.fromEntries(nameMap) : undefined;
 
     return {
-      accountId,
+      accountId: effectiveAccountId,
       from,
       to,
       cc: cc.length > 0 ? cc : undefined,
@@ -335,7 +374,7 @@ export function useComposeForm({
       isForward: isForward || undefined,
     };
   }, [
-    accountId,
+    effectiveAccountId,
     from,
     to,
     cc,

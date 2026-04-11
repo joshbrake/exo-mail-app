@@ -690,6 +690,126 @@ function formatMessageHeader(
   return result;
 }
 
+// Inline "Generate Draft" prompt — shown after thread messages when no draft exists
+function GenerateDraftInline({
+  emailId,
+  onStarted,
+}: {
+  emailId: string;
+  onStarted?: (taskId: string) => void;
+}) {
+  const [instructions, setInstructions] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const updateEmail = useAppStore((s) => s.updateEmail);
+  const startAgentTask = useAppStore((s) => s.startAgentTask);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleGenerate = useCallback(async () => {
+    if (generating) return;
+    setGenerating(true);
+    setError(null);
+    try {
+      updateEmail(emailId, { draft: undefined });
+      const result = (await window.api?.drafts?.rerunAgent?.(
+        emailId,
+        instructions.trim() || undefined,
+      )) as { success: boolean; data?: { taskId: string }; error?: string } | undefined;
+
+      if (result?.success && result.data) {
+        const { taskId } = result.data;
+        const email = useAppStore.getState().emails.find((e) => e.id === emailId);
+        startAgentTask(taskId, emailId, ["claude"], "", {
+          accountId: email?.accountId || "",
+          currentEmailId: emailId,
+          currentThreadId: email?.threadId || "",
+          userEmail: "",
+        });
+        trackEvent("draft_generated", {
+          source: "inline",
+          has_instructions: !!instructions.trim(),
+        });
+        onStarted?.(taskId);
+      } else {
+        setError(result?.error || "Failed to generate draft");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate draft");
+    } finally {
+      setGenerating(false);
+    }
+  }, [emailId, instructions, generating, updateEmail, startAgentTask, onStarted]);
+
+  return (
+    <div className="mx-6 my-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 mt-0.5">
+          <svg
+            className="w-4 h-4 text-blue-500 dark:text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <textarea
+            ref={inputRef}
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleGenerate();
+              }
+            }}
+            placeholder='Add context for the draft (optional)... e.g. "decline politely" or "suggest meeting next week"'
+            rows={2}
+            disabled={generating}
+            className="w-full text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none disabled:opacity-50"
+          />
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              {generating ? "Generating draft..." : "Cmd+Enter to generate"}
+            </span>
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded-md transition-colors disabled:opacity-50"
+            >
+              {generating && (
+                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+              )}
+              Generate Draft
+            </button>
+          </div>
+          {error && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{error}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Superhuman-style thread message
 function ThreadMessage({
   email,
@@ -1109,6 +1229,7 @@ function InlineReply({
 }) {
   const isForward = composeMode === "forward";
 
+  const accounts = useAppStore((s) => s.accounts);
   const form = useComposeForm({
     accountId,
     initialTo: restoredDraft?.to !== undefined ? restoredDraft.to : isForward ? [] : replyInfo.to,
@@ -1129,6 +1250,7 @@ function InlineReply({
       isForward && replyInfo.forwardedAttachments?.length
         ? { emailId: replyToEmailId, accountId }
         : undefined,
+    allAccounts: accounts.length > 1 ? accounts : undefined,
   });
 
   // Merge external nameMap (from thread context) with autocomplete-derived nameMap
@@ -1185,6 +1307,13 @@ function InlineReply({
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const inlineCcInputRef = useRef<HTMLInputElement>(null);
+  const inlineBccInputRef = useRef<HTMLInputElement>(null);
+
+  const focusInlineEditor = useCallback(() => {
+    const editor = containerRef.current?.querySelector<HTMLElement>(".ProseMirror");
+    editor?.focus();
+  }, []);
 
   // AI draft refinement state
   const [refineCritique, setRefineCritique] = useState("");
@@ -1267,6 +1396,62 @@ function InlineReply({
   // is used to push new content into the editor, separate from bodyHtml which tracks
   // the latest editor value)
   const [editorInitialContent, setEditorInitialContent] = useState(restoredDraft?.bodyHtml || "");
+
+  // AI draft generation state — shown when no existing draft and auto-draft is off
+  const [draftInstructions, setDraftInstructions] = useState("");
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [generateDraftError, setGenerateDraftError] = useState<string | null>(null);
+  // Track whether the user dismissed the generate prompt
+  const [generateDismissed, setGenerateDismissed] = useState(false);
+  // Track the generated task ID so we can detect when the draft arrives
+  const [pendingDraftTaskId, setPendingDraftTaskId] = useState<string | null>(null);
+
+  // When a draft arrives for this email (from the agent), push it into the editor
+  const emailFromStore = useAppStore(
+    useCallback((s) => s.emails.find((e) => e.id === replyToEmailId), [replyToEmailId]),
+  );
+  useEffect(() => {
+    if (pendingDraftTaskId && emailFromStore?.draft?.body) {
+      const bodyHtml = draftBodyToHtml(emailFromStore.draft.body);
+      setEditorInitialContent(bodyHtml);
+      form.handleEditorChange(bodyHtml, emailFromStore.draft.body);
+      onContentChange?.({ bodyHtml, bodyText: emailFromStore.draft.body });
+      setPendingDraftTaskId(null);
+    }
+  }, [pendingDraftTaskId, emailFromStore?.draft?.body, form.handleEditorChange, onContentChange]);
+
+  const handleGenerateDraft = useCallback(async () => {
+    if (isGeneratingDraft) return;
+    setIsGeneratingDraft(true);
+    setGenerateDraftError(null);
+    try {
+      const result = (await window.api?.drafts?.rerunAgent?.(
+        replyToEmailId,
+        draftInstructions.trim() || undefined,
+      )) as { success: boolean; data?: { taskId: string }; error?: string } | undefined;
+
+      if (result?.success && result.data) {
+        setPendingDraftTaskId(result.data.taskId);
+        const email = useAppStore.getState().emails.find((e) => e.id === replyToEmailId);
+        useAppStore.getState().startAgentTask(result.data.taskId, replyToEmailId, ["claude"], "", {
+          accountId: email?.accountId || "",
+          currentEmailId: replyToEmailId,
+          currentThreadId: email?.threadId || "",
+          userEmail: "",
+        });
+        trackEvent("draft_generated", {
+          source: "inline_reply",
+          has_instructions: !!draftInstructions.trim(),
+        });
+      } else {
+        setGenerateDraftError(result?.error || "Failed to generate draft");
+      }
+    } catch (err) {
+      setGenerateDraftError(err instanceof Error ? err.message : "Failed to generate draft");
+    } finally {
+      setIsGeneratingDraft(false);
+    }
+  }, [replyToEmailId, draftInstructions, isGeneratingDraft]);
 
   const handleRefine = useCallback(async () => {
     if (!refineCritique.trim() || !draftEmailId || isRefining) return;
@@ -1604,6 +1789,10 @@ function InlineReply({
                   autoFocus={isForward}
                   nameMap={mergedNameMap}
                   onSuggestionSelected={form.handleSuggestionSelected}
+                  onTab={() => {
+                    if (form.showCcBcc) inlineCcInputRef.current?.focus();
+                    else focusInlineEditor();
+                  }}
                   fieldId="to"
                   onChipDrop={(email, sourceField) =>
                     form.handleRecipientDrop("to", email, sourceField)
@@ -1640,6 +1829,8 @@ function InlineReply({
                   placeholder="cc@example.com"
                   nameMap={mergedNameMap}
                   onSuggestionSelected={form.handleSuggestionSelected}
+                  inputRef={inlineCcInputRef}
+                  onTab={() => inlineBccInputRef.current?.focus()}
                   fieldId="cc"
                   onChipDrop={(email, sourceField) =>
                     form.handleRecipientDrop("cc", email, sourceField)
@@ -1653,22 +1844,115 @@ function InlineReply({
                   placeholder="bcc@example.com"
                   nameMap={mergedNameMap}
                   onSuggestionSelected={form.handleSuggestionSelected}
+                  inputRef={inlineBccInputRef}
+                  onTab={() => focusInlineEditor()}
                   fieldId="bcc"
                   onChipDrop={(email, sourceField) =>
                     form.handleRecipientDrop("bcc", email, sourceField)
                   }
                   onChipDragStart={handleRecipientDragStart}
                 />
-                <FromSelector
-                  aliases={form.sendAsAliases}
-                  selected={form.from}
-                  onChange={form.setFrom}
-                />
               </div>
+            )}
+            {form.sendAsAliases.length >= 2 && (
+              <FromSelector
+                aliases={form.sendAsAliases}
+                selected={form.from}
+                onChange={form.setFrom}
+              />
             )}
           </>
         )}
       </div>
+      {/* Generate AI Draft prompt — shown when no existing draft and not a forward */}
+      {!isForward && !draftEmailId && !restoredDraft?.bodyHtml && !generateDismissed && (
+        <div className="mx-4 mt-2 rounded-md border border-blue-200 dark:border-blue-800/50 bg-blue-50/50 dark:bg-blue-900/20 p-3">
+          <div className="flex items-start gap-2">
+            <svg
+              className="w-4 h-4 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                  Generate AI Draft
+                </span>
+                <button
+                  onClick={() => setGenerateDismissed(true)}
+                  className="text-blue-400 dark:text-blue-500 hover:text-blue-600 dark:hover:text-blue-300 -mr-1"
+                  title="Dismiss"
+                >
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={draftInstructions}
+                  onChange={(e) => setDraftInstructions(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault();
+                      handleGenerateDraft();
+                    }
+                  }}
+                  placeholder='Add context... e.g. "decline politely" or "suggest Tuesday"'
+                  disabled={isGeneratingDraft || !!pendingDraftTaskId}
+                  className="flex-1 px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700/50 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                />
+                <button
+                  onClick={handleGenerateDraft}
+                  disabled={isGeneratingDraft || !!pendingDraftTaskId}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded transition-colors disabled:opacity-50 flex-shrink-0"
+                >
+                  {(isGeneratingDraft || pendingDraftTaskId) && (
+                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                  )}
+                  {pendingDraftTaskId ? "Generating..." : "Generate"}
+                </button>
+              </div>
+              {generateDraftError && (
+                <p className="text-xs text-red-500 dark:text-red-400 mt-1">{generateDraftError}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="px-4 py-2">
         <ComposeEditor
           initialContent={editorInitialContent}
@@ -1927,6 +2211,7 @@ function NewEmailCompose({
   onDiscard?: () => void;
   initialDraft?: RestoredDraft | null;
 }) {
+  const accounts = useAppStore((s) => s.accounts);
   const form = useComposeForm({
     accountId,
     initialTo: initialDraft?.to ?? [],
@@ -1935,6 +2220,7 @@ function NewEmailCompose({
     initialSubject: initialDraft?.subject || "",
     initialBodyHtml: initialDraft?.bodyHtml || "",
     initialBodyText: initialDraft?.bodyText || "",
+    allAccounts: accounts.length > 1 ? accounts : undefined,
   });
 
   // Watch for external updates to this draft (e.g. from the agent's update_draft tool).
@@ -2145,12 +2431,14 @@ function NewEmailCompose({
                 }
                 onChipDragStart={form.handleRecipientDragStart}
               />
-              <FromSelector
-                aliases={form.sendAsAliases}
-                selected={form.from}
-                onChange={form.setFrom}
-              />
             </>
+          )}
+          {form.sendAsAliases.length >= 2 && (
+            <FromSelector
+              aliases={form.sendAsAliases}
+              selected={form.from}
+              onChange={form.setFrom}
+            />
           )}
 
           <div className="flex items-baseline gap-2 py-1.5 border-b border-gray-200 dark:border-gray-700/50">
@@ -2340,17 +2628,29 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
 
   const selectedEmail = storeEmail ?? fetchedEmail;
 
-  // Get current user email for "Me" detection
+  // Get current user email for "Me" detection.
+  // In unified mode, derive from the selected email's account.
   const currentAccount = accounts.find((a) => a.id === currentAccountId);
-  const currentUserEmail = currentAccount?.email;
+  const primaryAccount = accounts.find((a) => a.isPrimary) || accounts[0];
+  const emailAccount = selectedEmail?.accountId
+    ? accounts.find((a) => a.id === selectedEmail.accountId)
+    : undefined;
+  // effectiveAccountId: for compose/reply context — derived from email in unified mode
+  const effectiveAccountId = currentAccountId ?? emailAccount?.id ?? primaryAccount?.id ?? null;
+  const effectiveUserEmail = currentAccountId
+    ? currentAccount?.email
+    : (emailAccount?.email ?? primaryAccount?.email);
+  const currentUserEmail = effectiveUserEmail;
 
   // State to hold full thread emails fetched from Gmail (includes sent replies)
   const [fullThreadEmails, setFullThreadEmails] = useState<DashboardEmail[]>([]);
   const [_isLoadingThread, setIsLoadingThread] = useState(false);
 
-  // Fetch full thread when thread changes
+  // Fetch full thread when thread changes.
+  // In unified mode, derive accountId from the selected email.
+  const selectedEmailAccountId = selectedEmail?.accountId || currentAccountId;
   useEffect(() => {
-    if (!selectedEmail || !currentAccountId) {
+    if (!selectedEmail || !selectedEmailAccountId) {
       setFullThreadEmails([]);
       return;
     }
@@ -2360,7 +2660,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
       try {
         const response = await window.api.emails.getThread(
           selectedEmail.threadId,
-          currentAccountId,
+          selectedEmailAccountId,
         );
         if (response.success && response.data) {
           setFullThreadEmails(response.data);
@@ -2376,7 +2676,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
     };
 
     fetchThread();
-  }, [selectedEmail?.threadId, currentAccountId]);
+  }, [selectedEmail?.threadId, selectedEmailAccountId]);
 
   // Mark-as-read is handled imperatively in the Enter/click handlers
   // (store.markThreadAsRead) — not here — so it fires instantly before render.
@@ -2731,7 +3031,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
   // send time — they don't affect the visible UI.
   const composeRequestIdRef = useRef(0);
   useEffect(() => {
-    if (isFullView && composeState?.isOpen && composeState.replyToEmailId && currentAccountId) {
+    if (isFullView && composeState?.isOpen && composeState.replyToEmailId && effectiveAccountId) {
       const mode = composeState.mode;
       if (mode === "reply" || mode === "reply-all" || mode === "forward") {
         const requestId = ++composeRequestIdRef.current;
@@ -2740,7 +3040,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
         // by composeState, not reactive to email/account changes).
         const storeState = useAppStore.getState();
         const storeEmails = storeState.emails;
-        const acct = storeState.accounts.find((a) => a.id === currentAccountId);
+        const acct = storeState.accounts.find((a) => a.id === effectiveAccountId);
         const userEmail = acct?.email;
         // Find the email in the thread that has a draft (may not be the latest)
         const threadId = storeEmails.find((e) => e.id === composeState.replyToEmailId)?.threadId;
@@ -2778,7 +3078,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
           // These only matter at send time for Gmail threading — the UI is
           // already fully interactive without them.
           window.api.compose
-            .getReplyInfo(composeState.replyToEmailId, mode, currentAccountId)
+            .getReplyInfo(composeState.replyToEmailId, mode, effectiveAccountId)
             .then((response: IpcResponse<ReplyInfo | null>) => {
               if (requestId !== composeRequestIdRef.current) return;
               if (response.success && response.data) {
@@ -2802,7 +3102,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
           // Fall back to the IPC call.
           setIsLoadingReplyInfo(true);
           window.api.compose
-            .getReplyInfo(composeState.replyToEmailId, mode, currentAccountId)
+            .getReplyInfo(composeState.replyToEmailId, mode, effectiveAccountId)
             .then((response: IpcResponse<ReplyInfo | null>) => {
               if (requestId !== composeRequestIdRef.current) return;
               if (!response.success || !response.data) {
@@ -2821,7 +3121,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
         }
       }
     }
-  }, [isFullView, composeState, currentAccountId, closeCompose, setInlineReplyOpen]);
+  }, [isFullView, composeState, effectiveAccountId, closeCompose, setInlineReplyOpen]);
 
   // Safety net: if we're in full view with no valid email and no compose open,
   // fall back to split view so the email list becomes visible. This catches edge
@@ -2865,11 +3165,11 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
     // Add the sent email to the store optimistically.
     // Always use the current thread's threadId so forwards appear in the
     // thread view alongside the original email, just like replies do.
-    if (currentAccountId && currentUserEmail) {
+    if (effectiveAccountId && currentUserEmail) {
       const sentEmail: DashboardEmail = {
         id: sentInfo.id,
         threadId: selectedEmail?.threadId ?? sentInfo.threadId,
-        accountId: currentAccountId,
+        accountId: effectiveAccountId,
         from: currentUserEmail,
         to: sentInfo.to.join(", "),
         cc: sentInfo.cc?.join(", "),
@@ -2917,8 +3217,8 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
     setRestoredDraft(null);
     setInlineReplyOpen(false);
     // Also trigger sync to ensure we have the canonical version
-    if (currentAccountId) {
-      window.api.sync.now(currentAccountId);
+    if (effectiveAccountId) {
+      window.api.sync.now(effectiveAccountId);
     }
   };
 
@@ -2963,8 +3263,8 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
     closeCompose();
     setViewMode("split");
     // Trigger sync to get the sent message
-    if (currentAccountId) {
-      window.api.sync.now(currentAccountId);
+    if (effectiveAccountId) {
+      window.api.sync.now(effectiveAccountId);
     }
   };
 
@@ -2983,7 +3283,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
       formState.bodyHtml.replace(/<[^>]*>/g, "").trim();
     const existingDraftId = composeState?.restoredDraft?.localDraftId;
 
-    if (hasContent && currentAccountId) {
+    if (hasContent && effectiveAccountId) {
       if (existingDraftId) {
         // Update existing draft with current form state
         await window.api.compose.updateLocalDraft(existingDraftId, {
@@ -3007,7 +3307,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
       } else {
         // Save new draft
         const result = (await window.api.compose.saveLocalDraft({
-          accountId: currentAccountId,
+          accountId: effectiveAccountId,
           to: formState.to,
           cc: formState.cc.length > 0 ? formState.cc : undefined,
           bcc: formState.bcc.length > 0 ? formState.bcc : undefined,
@@ -3035,11 +3335,13 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
     setViewMode("split");
   };
 
-  // Show new email compose view when in "new" compose mode
-  if (composeState?.isOpen && composeState.mode === "new" && currentAccountId) {
+  // Show new email compose view when in "new" compose mode.
+  // In unified mode, default to the primary account.
+  const newComposeAccountId = currentAccountId ?? primaryAccount?.id;
+  if (composeState?.isOpen && composeState.mode === "new" && newComposeAccountId) {
     return (
       <NewEmailCompose
-        accountId={currentAccountId}
+        accountId={newComposeAccountId}
         onSend={handleNewEmailSent}
         onCancel={handleNewEmailCancel}
         onDiscard={handleNewEmailDiscard}
@@ -3097,7 +3399,8 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
   const isStarred = threadEmails.some((e) => e.labelIds?.includes("STARRED"));
 
   const handleArchive = () => {
-    if (!currentAccountId || !selectedThreadId) return;
+    const threadAccountId = threadEmails[0]?.accountId;
+    if (!threadAccountId || !selectedThreadId) return;
     const emailIds = threadEmails.map((e) => e.id);
 
     // Find next thread before removing
@@ -3124,7 +3427,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
       id: `archive-${selectedThreadId}-${Date.now()}`,
       type: "archive",
       threadCount: 1,
-      accountId: currentAccountId,
+      accountId: threadAccountId,
       emails: [...threadEmails],
       scheduledAt: Date.now(),
       delayMs: 5000,
@@ -3132,7 +3435,8 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
   };
 
   const handleTrash = () => {
-    if (!currentAccountId || !selectedThreadId) return;
+    const threadAccountId = threadEmails[0]?.accountId;
+    if (!threadAccountId || !selectedThreadId) return;
     const emailIds = threadEmails.map((e) => e.id);
 
     // Find next thread before removing (same auto-advance as archive)
@@ -3159,7 +3463,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
       id: `trash-${selectedThreadId}-${Date.now()}`,
       type: "trash",
       threadCount: 1,
-      accountId: currentAccountId,
+      accountId: threadAccountId,
       emails: [...threadEmails],
       scheduledAt: Date.now(),
       delayMs: 5000,
@@ -3167,7 +3471,8 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
   };
 
   const handleMarkUnread = () => {
-    if (!currentAccountId || !latestEmail) return;
+    const threadAccountId = latestEmail?.accountId;
+    if (!threadAccountId || !latestEmail) return;
     const currentLabels = latestEmail.labelIds || ["INBOX"];
 
     // Optimistic update + undo — only if email was actually modified
@@ -3178,7 +3483,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
         id: `mark-unread-${selectedThreadId}-${Date.now()}`,
         type: "mark-unread",
         threadCount: 1,
-        accountId: currentAccountId,
+        accountId: threadAccountId,
         emails: [latestEmail],
         scheduledAt: Date.now(),
         delayMs: 5000,
@@ -3190,7 +3495,8 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
   };
 
   const handleToggleStar = () => {
-    if (!currentAccountId || !latestEmail) return;
+    const threadAccountId = latestEmail?.accountId;
+    if (!threadAccountId || !latestEmail) return;
     const newStarred = !isStarred;
     const changedEmails: typeof threadEmails = [];
     const previousLabels: Record<string, string[]> = {};
@@ -3220,7 +3526,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
         id: `${newStarred ? "star" : "unstar"}-${selectedThreadId}-${Date.now()}`,
         type: newStarred ? "star" : "unstar",
         threadCount: 1,
-        accountId: currentAccountId,
+        accountId: threadAccountId,
         emails: changedEmails,
         scheduledAt: Date.now(),
         delayMs: 5000,
@@ -3406,7 +3712,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
 
         {/* Snooze banner */}
         {snoozedThreads.has(latestEmail.threadId) &&
-          currentAccountId &&
+          effectiveAccountId &&
           (() => {
             const snoozeInfo = snoozedThreads.get(latestEmail.threadId);
             return snoozeInfo ? (
@@ -3431,7 +3737,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
                 </div>
                 <button
                   onClick={async () => {
-                    await window.api.snooze.unsnooze(latestEmail.threadId, currentAccountId);
+                    await window.api.snooze.unsnooze(latestEmail.threadId, effectiveAccountId);
                     removeSnoozedThread(latestEmail.threadId);
                   }}
                   className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 font-medium"
@@ -3496,7 +3802,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
                 onReplyAll={() => openCompose("reply-all", email.id)}
                 onForward={() => openCompose("forward", email.id)}
                 currentUserEmail={currentUserEmail}
-                accountId={currentAccountId ?? undefined}
+                accountId={effectiveAccountId ?? undefined}
                 threadEmails={threadEmails}
                 onPreviewAttachment={(attachment, data) =>
                   setPreviewAttachment({ attachment, data })
@@ -3511,13 +3817,13 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
                   inlineReplyToEmailId in the store so this condition keeps matching. */}
               {inlineReplyToEmailId === email.id &&
                 inlineReplyInfo &&
-                currentAccountId &&
+                effectiveAccountId &&
                 currentUserEmail &&
                 inlineComposeMode && (
                   <InlineReply
                     key={`${inlineComposeMode}-${inlineReplyToEmailId}`}
                     replyInfo={inlineReplyInfo}
-                    accountId={currentAccountId}
+                    accountId={effectiveAccountId}
                     accountEmail={currentUserEmail}
                     composeMode={inlineComposeMode}
                     replyToEmailId={inlineReplyToEmailId}
@@ -3563,6 +3869,11 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
             </div>
           ))}
         </div>
+
+        {/* Generate Draft inline — shown when email needs reply but has no draft and no inline reply open */}
+        {latestReceivedEmail?.analysis?.needsReply &&
+          !draftEmail?.draft &&
+          !inlineReplyToEmailId && <GenerateDraftInline emailId={latestReceivedEmail.id} />}
 
         {/* Analysis section with priority override — uses latestReceivedEmail
              so the user's own sent reply doesn't override the thread's analysis */}
