@@ -119,6 +119,13 @@
   background: #1f2937;
 }
 
+/* TipTap editor (compose) — Tailwind Preflight resets <p> margin to 0,
+   so paragraphs (from double newlines) need explicit spacing to look distinct
+   from line breaks (<br> within a paragraph). */
+.tiptap p + p {
+  margin-top: 0.75em;
+}
+
 /* TipTap editor (compose) list/formatting styles — Tailwind Preflight resets these */
 .tiptap ul, .tiptap ol {
   padding-left: 1.5em;
