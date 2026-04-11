@@ -29,6 +29,8 @@ import {
   clearSnoozedEmails,
   saveCorrespondentProfile,
   updateAccountDisplayName,
+  updateAccountAppearance,
+  updateAccountOrder,
   deleteAgentTrace,
   saveDraft,
   type AccountRecord,
@@ -54,10 +56,19 @@ let retryingConnections = false;
 // Used to restore the email to DB if a queued trash action fails permanently.
 const trashedEmailData: Map<string, DashboardEmail> = new Map();
 
+/** Get a connected client from activeClients, or null if absent/unconnected. */
+function getConnectedClient(accountId: string): GmailClient | null {
+  const client = activeClients.get(accountId);
+  return client?.isConnected() ? client : null;
+}
+
 // Service wrapper for accessing sync functionality from other IPC handlers
 export const getEmailSyncService = () => ({
   getClientForAccount(accountId: string): GmailClient | null {
-    return activeClients.get(accountId) || null;
+    const client = activeClients.get(accountId);
+    // Unconnected clients (stored for reauth) have gmail === null — treat as absent
+    // to prevent "Cannot read properties of null (reading 'users')" crashes.
+    return client?.isConnected() ? client : null;
   },
   syncService: emailSyncService,
 });
@@ -121,7 +132,7 @@ export function registerSyncIpc(): void {
   });
 
   // Give the pending actions queue access to Gmail clients
-  pendingActionsQueue.setClientResolver((accountId) => activeClients.get(accountId) || null);
+  pendingActionsQueue.setClientResolver((accountId) => getConnectedClient(accountId));
 
   // Forward permanent action failures to the renderer so it can restore emails,
   // and roll back the optimistic DB update
@@ -454,6 +465,51 @@ export function registerSyncIpc(): void {
 
       try {
         setPrimaryAccount(accountId);
+        return { success: true, data: undefined };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+    },
+  );
+
+  // Update account appearance (color, label)
+  ipcMain.handle(
+    "accounts:update-appearance",
+    async (
+      _,
+      {
+        accountId,
+        color,
+        label,
+      }: { accountId: string; color?: string | null; label?: string | null },
+    ): Promise<IpcResponse<void>> => {
+      if (useFakeData) {
+        return { success: true, data: undefined };
+      }
+      try {
+        updateAccountAppearance(accountId, { color, label });
+        return { success: true, data: undefined };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+    },
+  );
+
+  // Reorder accounts
+  ipcMain.handle(
+    "accounts:reorder",
+    async (_, { accountIds }: { accountIds: string[] }): Promise<IpcResponse<void>> => {
+      if (useFakeData) {
+        return { success: true, data: undefined };
+      }
+      try {
+        updateAccountOrder(accountIds);
         return { success: true, data: undefined };
       } catch (error) {
         return {
@@ -960,7 +1016,7 @@ export function registerSyncIpc(): void {
         return { success: true, data: undefined, queued: true };
       }
 
-      const client = activeClients.get(accountId);
+      const client = getConnectedClient(accountId);
       if (!client) {
         pendingActionsQueue.enqueue("archive", emailId, accountId);
         return { success: true, data: undefined, queued: true };
@@ -1056,7 +1112,7 @@ export function registerSyncIpc(): void {
         return { success: true, data: undefined, queued: true };
       }
 
-      const client = activeClients.get(accountId);
+      const client = getConnectedClient(accountId);
       if (!client) {
         for (const emailId of emailIds) {
           pendingActionsQueue.enqueue("archive", emailId, accountId);
@@ -1152,7 +1208,7 @@ export function registerSyncIpc(): void {
         return { success: true, data: undefined, queued: true };
       }
 
-      const client = activeClients.get(accountId);
+      const client = getConnectedClient(accountId);
       if (!client) {
         for (const emailId of emailIds) {
           if (emailDataMap.has(emailId)) trashedEmailData.set(emailId, emailDataMap.get(emailId)!);
@@ -1234,7 +1290,7 @@ export function registerSyncIpc(): void {
       }
 
       try {
-        const client = activeClients.get(accountId);
+        const client = getConnectedClient(accountId);
         if (!client) {
           for (const email of inboxEmails) {
             pendingActionsQueue.enqueue("archive", email.id, accountId);
@@ -1327,7 +1383,7 @@ export function registerSyncIpc(): void {
       }
 
       try {
-        const client = activeClients.get(accountId);
+        const client = getConnectedClient(accountId);
         if (!client) {
           if (emailData) trashedEmailData.set(emailId, emailData);
           pendingActionsQueue.enqueue("trash", emailId, accountId);
@@ -1389,7 +1445,7 @@ export function registerSyncIpc(): void {
       }
 
       try {
-        const client = activeClients.get(accountId);
+        const client = getConnectedClient(accountId);
         if (!client) {
           return { success: false, error: "Account not connected" };
         }
@@ -1417,7 +1473,7 @@ export function registerSyncIpc(): void {
       }
 
       try {
-        const client = activeClients.get(accountId);
+        const client = getConnectedClient(accountId);
         if (!client) {
           return { success: false, error: "Account not connected" };
         }
@@ -1472,7 +1528,7 @@ export function registerSyncIpc(): void {
       if (dbEmails.length > 0) {
         // Background refresh from Gmail API to pick up any missing thread members
         // (e.g., sent replies from other devices not yet synced)
-        const client = activeClients.get(accountId);
+        const client = getConnectedClient(accountId);
         if (client) {
           client
             .getThread(threadId)
@@ -1518,7 +1574,7 @@ export function registerSyncIpc(): void {
 
       // Fallback: no DB data (e.g., thread from remote search not yet saved locally)
       try {
-        const client = activeClients.get(accountId);
+        const client = getConnectedClient(accountId);
         if (!client) {
           return { success: false, error: "Account not connected" };
         }
@@ -1624,7 +1680,7 @@ export function registerSyncIpc(): void {
         return { success: true, data: { emails: [] } };
       }
 
-      const client = activeClients.get(accountId);
+      const client = getConnectedClient(accountId);
       if (!client) {
         return { success: false, error: "Account not connected" };
       }

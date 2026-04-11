@@ -88,6 +88,8 @@ export type Account = {
   displayName?: string;
   isPrimary: boolean;
   isConnected: boolean;
+  color?: string;
+  label?: string;
 };
 
 // Sync status per account
@@ -815,9 +817,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   setAccounts: (accounts) =>
     set({
       accounts,
-      // Set current to primary or first account if not set
+      // Only auto-select an account on first load (when no accounts existed yet).
+      // null means "All Inboxes" — don't override it once accounts are loaded.
       currentAccountId:
-        get().currentAccountId || accounts.find((a) => a.isPrimary)?.id || accounts[0]?.id || null,
+        get().accounts.length === 0
+          ? (get().currentAccountId ??
+            accounts.find((a) => a.isPrimary)?.id ??
+            accounts[0]?.id ??
+            null)
+          : get().currentAccountId,
     }),
   addAccount: (account) =>
     set((state) => {
@@ -1684,7 +1692,7 @@ export function getAppStateSnapshot(): Record<string, unknown> {
 }
 
 // Check if an email is sent by the user (not received)
-function isSentEmail(email: DashboardEmail, currentUserEmail?: string): boolean {
+function isSentEmail(email: DashboardEmail, currentUserEmail?: string | Set<string>): boolean {
   // Check labelIds first (most reliable)
   if (email.labelIds?.includes("SENT")) {
     return true;
@@ -1693,15 +1701,25 @@ function isSentEmail(email: DashboardEmail, currentUserEmail?: string): boolean 
   // Fall back to checking the from field
   if (!currentUserEmail) return false;
   const fromLower = email.from.toLowerCase();
-  const userEmailLower = currentUserEmail.toLowerCase();
   // Extract email from "Name <email>" format if present
   const emailMatch = fromLower.match(/<([^>]+)>/) || [null, fromLower];
-  const fromEmail = emailMatch[1] || fromLower;
-  return fromEmail.trim() === userEmailLower.trim();
+  const fromEmail = (emailMatch[1] || fromLower).trim();
+
+  if (typeof currentUserEmail === "string") {
+    return fromEmail === currentUserEmail.toLowerCase().trim();
+  }
+  // Set<string> — unified mode: check if from matches any account email
+  for (const addr of currentUserEmail) {
+    if (fromEmail === addr.toLowerCase().trim()) return true;
+  }
+  return false;
 }
 
 // Helper to group emails by thread
-export function groupByThread(emails: DashboardEmail[], currentUserEmail?: string): EmailThread[] {
+export function groupByThread(
+  emails: DashboardEmail[],
+  currentUserEmail?: string | Set<string>,
+): EmailThread[] {
   const threadMap = new Map<string, DashboardEmail[]>();
 
   // Pre-compute timestamps once to avoid creating Date objects in every sort
@@ -1801,9 +1819,15 @@ export function useThreadedEmails() {
   const snoozedThreadIds = useAppStore((state) => state.snoozedThreadIds);
   const recentlyRepliedThreadIds = useAppStore((state) => state.recentlyRepliedThreadIds);
 
-  // Get current user's email for sent detection
-  const currentAccount = accounts.find((a) => a.id === currentAccountId);
-  const currentUserEmail = currentAccount?.email;
+  // Get current user's email(s) for sent detection.
+  // In unified mode (null), build a Set of all account emails.
+  const currentUserEmail = useMemo(() => {
+    if (currentAccountId) {
+      return accounts.find((a) => a.id === currentAccountId)?.email;
+    }
+    const emails = new Set(accounts.map((a) => a.email));
+    return emails.size > 0 ? emails : undefined;
+  }, [currentAccountId, accounts]);
 
   // Memoize the expensive thread computation. j/k navigation only changes
   // selectedEmailId — none of these deps change, so the memo short-circuits
@@ -1907,8 +1931,18 @@ export function useSplitFilteredThreads() {
   const sentEmails = useAppStore((state) => state.sentEmails);
 
   return useMemo(() => {
-    // Filter splits for current account
-    const splits = allSplits.filter((s) => s.accountId === currentAccountId);
+    // Filter splits for current account. In unified mode (null), include all
+    // splits but deduplicate by name so shared split names appear once.
+    const splits = currentAccountId
+      ? allSplits.filter((s) => s.accountId === currentAccountId)
+      : Array.from(
+          allSplits
+            .reduce(
+              (map, s) => (map.has(s.name) ? map : map.set(s.name, s)),
+              new Map<string, InboxSplit>(),
+            )
+            .values(),
+        );
 
     // Helper to filter out threads matching exclusive splits (unless recently unsnoozed)
     const exclusiveSplits = splits.filter((s) => s.exclusive);
@@ -1937,8 +1971,9 @@ export function useSplitFilteredThreads() {
 
     // Handle sent virtual split — show sent emails grouped by thread
     if (currentSplitId === "__sent__") {
-      const currentAccount = accounts.find((a) => a.id === currentAccountId);
-      const currentUserEmail = currentAccount?.email;
+      const currentUserEmail: string | Set<string> | undefined = currentAccountId
+        ? accounts.find((a) => a.id === currentAccountId)?.email
+        : new Set(accounts.map((a) => a.email));
       const sentAccountEmails = currentAccountId
         ? sentEmails.filter((e) => e.accountId === currentAccountId)
         : sentEmails;

@@ -50,11 +50,18 @@ export function SplitTabs() {
   const localDrafts = useAppStore((state) => state.localDrafts);
   const { threads, needsReply, done, snoozedCount } = useThreadedEmails();
 
-  // Filter splits for current account
-  const splits = useMemo(
-    () => allSplits.filter((s) => s.accountId === currentAccountId),
-    [allSplits, currentAccountId],
-  );
+  // Filter splits for current account. In unified mode (null), deduplicate by name.
+  const splits = useMemo(() => {
+    if (currentAccountId) return allSplits.filter((s) => s.accountId === currentAccountId);
+    return Array.from(
+      allSplits
+        .reduce(
+          (map, s) => (map.has(s.name) ? map : map.set(s.name, s)),
+          new Map<string, InboxSplit>(),
+        )
+        .values(),
+    );
+  }, [allSplits, currentAccountId]);
 
   // Shared predicate: threads NOT matching any exclusive split (unless recently unsnoozed)
   const isNonExclusive = useMemo(() => {

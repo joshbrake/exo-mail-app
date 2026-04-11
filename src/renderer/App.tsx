@@ -597,6 +597,7 @@ async function prefetchEmailBodies(emailIds: string[]): Promise<void> {
 export default function App() {
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [scheduledPanelOpen, setScheduledPanelOpen] = useState(false);
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
@@ -811,12 +812,21 @@ export default function App() {
         const accountsResult = await window.api.accounts.list();
         if (accountsResult.success && accountsResult.data) {
           const fullAccounts: Account[] = accountsResult.data.map(
-            (acc: { id: string; email: string; isPrimary: boolean; displayName?: string }) => ({
+            (acc: {
+              id: string;
+              email: string;
+              isPrimary: boolean;
+              displayName?: string;
+              color?: string;
+              label?: string;
+            }) => ({
               id: acc.id,
               email: acc.email,
               displayName: acc.displayName,
               isPrimary: acc.isPrimary,
               isConnected: accountList.find((a) => a.id === acc.id)?.isConnected ?? false,
+              color: acc.color,
+              label: acc.label,
             }),
           );
           setAccounts(fullAccounts);
@@ -1382,16 +1392,35 @@ export default function App() {
   const hasActiveProgressiveSync = Object.values(syncProgress).some(
     (p) => p !== null && p.fetched < p.total,
   );
-  const { refetch: fetchEmails, isFetching } = useQuery({
+  const { isFetching } = useQuery({
     queryKey: ["emails", currentAccountId],
     queryFn: async () => {
-      const result = await window.api.gmail.fetchUnread(100, currentAccountId ?? undefined);
-      if (result.success) {
-        setEmails(result.data);
-        prefetchEmailBodies(result.data.map((e: DashboardEmail) => e.id)).catch(console.error);
-        return result.data;
+      if (currentAccountId) {
+        // Single account — fetch from that account
+        const result = await window.api.gmail.fetchUnread(100, currentAccountId);
+        if (result.success) {
+          // Merge: keep other accounts' emails, replace this account's
+          const otherEmails = useAppStore
+            .getState()
+            .emails.filter((e) => e.accountId !== currentAccountId);
+          setEmails([...otherEmails, ...result.data]);
+          prefetchEmailBodies(result.data.map((e: DashboardEmail) => e.id)).catch(console.error);
+          return result.data;
+        }
+        throw new Error(result.error);
       }
-      throw new Error(result.error);
+      // Unified mode (null) — fetch from all accounts
+      const accountList = useAppStore.getState().accounts;
+      const allEmails: DashboardEmail[] = [];
+      const results = await Promise.all(
+        accountList.map((acc) => window.api.sync.getEmails(acc.id)),
+      );
+      for (const r of results) {
+        if (r.success && r.data) allEmails.push(...r.data);
+      }
+      setEmails(allEmails);
+      prefetchEmailBodies(allEmails.map((e) => e.id)).catch(console.error);
+      return allEmails;
     },
     enabled: needsSetup === false && !hasActiveProgressiveSync,
     // Disable auto-refetch on window focus — the sync loop + sync buffer
@@ -1422,6 +1451,28 @@ export default function App() {
       fetchScheduledMessages();
     }
   }, [scheduledPanelOpen, scheduledMessageStats, fetchScheduledMessages]);
+
+  // Close account menu on outside click or Escape
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, [accountMenuOpen]);
 
   // Close scheduled panel on outside click
   useEffect(() => {
@@ -1463,8 +1514,23 @@ export default function App() {
         // Reload sent emails too
         await reloadSentEmailsForAccount(currentAccountId);
       } else {
-        // Fallback to legacy fetch for default account
-        await fetchEmails();
+        // Unified mode — sync and reload all accounts
+        const accountList = useAppStore.getState().accounts;
+        await Promise.all(accountList.map((acc) => window.api.sync.now(acc.id)));
+        const allEmails: DashboardEmail[] = [];
+        const allSent: DashboardEmail[] = [];
+        const results = await Promise.all(
+          accountList.map((acc) =>
+            Promise.all([window.api.sync.getEmails(acc.id), window.api.sync.getSentEmails(acc.id)]),
+          ),
+        );
+        for (const [emailsResult, sentResult] of results) {
+          if (emailsResult.success && emailsResult.data) allEmails.push(...emailsResult.data);
+          if (sentResult.success && sentResult.data) allSent.push(...sentResult.data);
+        }
+        setEmails(allEmails);
+        setSentEmails(allSent);
+        prefetchEmailBodies(allEmails.map((e) => e.id)).catch(console.error);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch emails");
@@ -1549,9 +1615,12 @@ export default function App() {
 
   // Get current account and its sync status
   const currentAccount = accounts.find((a) => a.id === currentAccountId);
+  // In unified mode (null), show syncing if ANY account is syncing
   const currentSyncStatus = currentAccountId
     ? syncStatuses.get(currentAccountId) || "idle"
-    : "idle";
+    : Array.from(syncStatuses.values()).includes("syncing")
+      ? "syncing"
+      : "idle";
   const isSyncing = currentSyncStatus === "syncing";
   const isCurrentAccountExpired =
     currentAccountId != null && expiredAccountIds.has(currentAccountId);
@@ -1628,45 +1697,28 @@ export default function App() {
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Exo</h1>
           {/* Account Selector */}
           {accounts.length > 0 && (
-            <div className="titlebar-no-drag relative">
+            <div ref={accountMenuRef} className="titlebar-no-drag relative">
               <button
                 onClick={() => setAccountMenuOpen(!accountMenuOpen)}
                 className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
               >
                 <span className="text-gray-700 dark:text-gray-300 truncate max-w-[200px]">
-                  {currentAccount?.email || "Select account"}
+                  {currentAccountId === null
+                    ? "All Inboxes"
+                    : currentAccount?.label || currentAccount?.email || "Select account"}
                 </span>
-                {/* Sync status indicator */}
-                {isSyncing && (
-                  <svg
-                    className="w-4 h-4 text-blue-500 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                )}
-                {!isSyncing && !isCurrentAccountExpired && currentSyncStatus === "idle" && (
-                  <span className="w-2 h-2 rounded-full bg-green-500" title="Connected" />
-                )}
-                {isCurrentAccountExpired && (
-                  <span className="w-2 h-2 rounded-full bg-amber-500" title="Session expired" />
-                )}
-                {!isCurrentAccountExpired && currentSyncStatus === "error" && (
-                  <span className="w-2 h-2 rounded-full bg-red-500" title="Sync error" />
-                )}
+                {/* Account status dot — only non-idle states (expired/error) */}
+                {isCurrentAccountExpired ? (
+                  <span
+                    className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"
+                    title="Session expired"
+                  />
+                ) : !isSyncing && currentSyncStatus === "error" ? (
+                  <span
+                    className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"
+                    title="Sync error"
+                  />
+                ) : null}
                 <svg
                   className="w-4 h-4 text-gray-500 dark:text-gray-400"
                   fill="none"
@@ -1686,6 +1738,24 @@ export default function App() {
               {accountMenuOpen && (
                 <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg dark:shadow-black/40 z-50">
                   <div className="py-1">
+                    {accounts.length > 1 && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setCurrentAccountId(null);
+                            setAccountMenuOpen(false);
+                            trackEvent("account_switched", { unified: true });
+                          }}
+                          className={`w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 ${
+                            currentAccountId === null ? "bg-blue-50 dark:bg-blue-900/30" : ""
+                          }`}
+                        >
+                          <span className="w-2 h-2 rounded-full bg-purple-500" />
+                          <span>All Inboxes</span>
+                        </button>
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                      </>
+                    )}
                     {accounts.map((account) => (
                       <button
                         key={account.id}
@@ -1696,15 +1766,24 @@ export default function App() {
                       >
                         <div className="flex items-center space-x-2">
                           <span
-                            className={`w-2 h-2 rounded-full ${
+                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
                               expiredAccountIds.has(account.id)
                                 ? "bg-amber-500"
-                                : account.isConnected
-                                  ? "bg-green-500"
-                                  : "bg-gray-400 dark:bg-gray-500"
+                                : !account.isConnected
+                                  ? "bg-gray-400 dark:bg-gray-500"
+                                  : account.color
+                                    ? ""
+                                    : "bg-green-500"
                             }`}
+                            style={
+                              account.color &&
+                              account.isConnected &&
+                              !expiredAccountIds.has(account.id)
+                                ? { backgroundColor: account.color }
+                                : undefined
+                            }
                           />
-                          <span className="truncate">{account.email}</span>
+                          <span className="truncate">{account.label || account.email}</span>
                         </div>
                         {account.isPrimary && (
                           <span className="text-xs text-gray-500 dark:text-gray-400">Primary</span>

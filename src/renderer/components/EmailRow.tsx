@@ -13,6 +13,8 @@ interface EmailRowProps {
   onCheckboxChange: () => void;
   snoozeInfo?: SnoozedEmail;
   returnTime?: number; // Unsnooze return time — shown instead of last message time
+  accountLabel?: string; // Account display label shown in unified view
+  accountColor?: string; // Account color shown in unified view
 }
 
 // Density-specific style maps
@@ -124,6 +126,8 @@ export const EmailRow = memo(
     onCheckboxChange,
     snoozeInfo,
     returnTime,
+    accountLabel,
+    accountColor,
   }: EmailRowProps) {
     const senderName = extractSenderName(thread.displaySender);
     const time = returnTime
@@ -158,6 +162,25 @@ export const EmailRow = memo(
         }
       `}
       >
+        {/* Account color dot — far left */}
+        {accountLabel && (
+          <span
+            className={`w-2 h-2 rounded-full flex-shrink-0 ${
+              isSelected && !isChecked
+                ? "bg-white/50"
+                : accountColor
+                  ? ""
+                  : "bg-gray-300 dark:bg-gray-600"
+            }`}
+            style={
+              accountColor && !(isSelected && !isChecked)
+                ? { backgroundColor: accountColor }
+                : undefined
+            }
+            title={accountLabel}
+          />
+        )}
+
         {/* Checkbox / Unread indicator area */}
         <div className="w-5 flex-shrink-0 flex items-center justify-center">
           {showChecked ? (
@@ -193,8 +216,8 @@ export const EmailRow = memo(
           className="flex-1 flex items-center gap-2 min-w-0 h-full text-left"
         >
           {/* Sender name */}
-          <div
-            className={`${ds.senderWidth} truncate font-medium flex-shrink-0 ${
+          <span
+            className={`${ds.senderWidth} truncate flex-shrink-0 font-medium ${
               isSelected && !isChecked
                 ? "text-white"
                 : isVisuallyUnread
@@ -203,13 +226,13 @@ export const EmailRow = memo(
             }`}
           >
             {senderName}
-          </div>
+          </span>
 
           {/* Priority label */}
           {priorityLabel && (
             <span
               className={`
-          ${ds.priorityBadge} rounded flex-shrink-0 uppercase font-medium
+          ${ds.priorityBadge} rounded flex-shrink-0 uppercase font-medium w-14 text-center
           ${isSelected && !isChecked ? "bg-white/20 text-white" : priorityLabel.className}
         `}
             >
@@ -335,7 +358,9 @@ export const EmailRow = memo(
     prev.isMultiSelectActive === next.isMultiSelectActive &&
     prev.density === next.density &&
     prev.snoozeInfo === next.snoozeInfo &&
-    prev.returnTime === next.returnTime,
+    prev.returnTime === next.returnTime &&
+    prev.accountLabel === next.accountLabel &&
+    prev.accountColor === next.accountColor,
   // onClick / onCheckboxChange intentionally omitted — they are stable in behavior
   // but are new arrow function references on each parent render.
 );

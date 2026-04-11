@@ -51,6 +51,7 @@ export function EmailList() {
     setArchiveReadyThreads,
     removeEmails,
     addUndoAction,
+    accounts,
     selectedDraftId,
     setSelectedDraftId,
     removeRecentlyUnsnoozedThread,
@@ -115,24 +116,26 @@ export function EmailList() {
 
   // Load snoozed emails on mount / account switch.
   // Also processes any snoozes that expired while the app was closed.
+  // In unified mode (null), load snooze data for ALL accounts.
   useEffect(() => {
-    if (!currentAccountId) return;
-    window.api.snooze
-      .list(currentAccountId)
-      .then((response: { success: boolean; data?: SnoozedEmail[]; expired?: SnoozedEmail[] }) => {
+    const accountIds = currentAccountId ? [currentAccountId] : accounts.map((a) => a.id);
+    if (accountIds.length === 0) return;
+    Promise.all(accountIds.map((id) => window.api.snooze.list(id))).then((responses) => {
+      const allSnoozed: SnoozedEmail[] = [];
+      for (const response of responses) {
         if (response.success && response.data) {
-          setSnoozedThreads(response.data);
+          allSnoozed.push(...response.data);
         }
-        // Process snoozes that expired while the app was closed —
-        // adds them to recentlyUnsnoozedThreadIds so they sort correctly
         if (response.expired && response.expired.length > 0) {
           const store = useAppStore.getState();
           for (const email of response.expired) {
             store.handleThreadUnsnoozed(email.threadId, email.snoozeUntil);
           }
         }
-      });
-  }, [currentAccountId, setSnoozedThreads]);
+      }
+      setSnoozedThreads(allSnoozed);
+    });
+  }, [currentAccountId, accounts, setSnoozedThreads]);
 
   // Listen for snooze events from main process, filtered by current account.
   // Uses useAppStore.getState() inside callbacks so we don't need action refs
@@ -143,19 +146,23 @@ export function EmailList() {
   useEffect(() => {
     window.api.snooze.onUnsnoozed((data: { emails: SnoozedEmail[] }) => {
       for (const email of data.emails) {
-        if (email.accountId === currentAccountRef.current) {
+        // In unified mode (null), accept events from any account
+        if (currentAccountRef.current === null || email.accountId === currentAccountRef.current) {
           useAppStore.getState().handleThreadUnsnoozed(email.threadId, email.snoozeUntil);
         }
       }
     });
     window.api.snooze.onSnoozed((data: { snoozedEmail: SnoozedEmail }) => {
-      if (data.snoozedEmail.accountId === currentAccountRef.current) {
+      if (
+        currentAccountRef.current === null ||
+        data.snoozedEmail.accountId === currentAccountRef.current
+      ) {
         useAppStore.getState().addSnoozedThread(data.snoozedEmail);
       }
     });
     window.api.snooze.onManuallyUnsnoozed(
       (data: { threadId: string; accountId: string; snoozeUntil: number }) => {
-        if (data.accountId === currentAccountRef.current) {
+        if (currentAccountRef.current === null || data.accountId === currentAccountRef.current) {
           useAppStore.getState().handleThreadUnsnoozed(data.threadId, data.snoozeUntil);
         }
       },
@@ -165,21 +172,23 @@ export function EmailList() {
     };
   }, []);
 
-  // Load archive-ready threads on mount / account switch
+  // Load archive-ready threads on mount / account switch.
+  // In unified mode (null), load for ALL accounts.
   useEffect(() => {
-    if (!currentAccountId) return;
-    window.api.archiveReady
-      .getThreads(currentAccountId)
-      .then((result: { success: boolean; data?: Array<{ threadId: string; reason: string }> }) => {
+    const accountIds = currentAccountId ? [currentAccountId] : accounts.map((a) => a.id);
+    if (accountIds.length === 0) return;
+    Promise.all(accountIds.map((id) => window.api.archiveReady.getThreads(id))).then((results) => {
+      const allItems: Array<{ threadId: string; reason: string }> = [];
+      for (const result of results) {
         if (result.success && result.data) {
-          const items = result.data.map((t: { threadId: string; reason: string }) => ({
-            threadId: t.threadId,
-            reason: t.reason,
-          }));
-          setArchiveReadyThreads(items);
+          for (const t of result.data) {
+            allItems.push({ threadId: t.threadId, reason: t.reason });
+          }
         }
-      });
-  }, [currentAccountId, setArchiveReadyThreads]);
+      }
+      setArchiveReadyThreads(allItems);
+    });
+  }, [currentAccountId, accounts, setArchiveReadyThreads]);
 
   // Listen for new archive-ready results from background prefetch
   const currentAccountRef2 = useRef(currentAccountId);
@@ -188,7 +197,8 @@ export function EmailList() {
   useEffect(() => {
     window.api.archiveReady.onResult(
       (data: { threadId: string; accountId: string; isReady: boolean; reason: string }) => {
-        if (data.accountId !== currentAccountRef2.current) return;
+        if (currentAccountRef2.current !== null && data.accountId !== currentAccountRef2.current)
+          return;
         if (data.isReady) {
           // Add single thread to the set
           useAppStore.setState((state) => {
@@ -240,37 +250,60 @@ export function EmailList() {
   }, [recentlyRepliedThreadIds]);
 
   const handleArchiveAll = useCallback(() => {
-    if (!currentAccountId || threads.length === 0) return;
+    if (threads.length === 0) return;
 
     const archiveReadyThreadIds = threads.map((t) => t.threadId);
     const allEmailIds: string[] = [];
-    const allEmails: DashboardEmail[] = [];
     const { emails: currentEmails } = useAppStore.getState();
+    // Group emails by accountId for separate undo actions
+    const emailsByAccount = new Map<string, DashboardEmail[]>();
     for (const thread of threads) {
       const threadEmails = currentEmails.filter((e) => e.threadId === thread.threadId);
       for (const email of threadEmails) {
         allEmailIds.push(email.id);
-        allEmails.push(email);
+        const accountId = email.accountId || "default";
+        const group = emailsByAccount.get(accountId) || [];
+        group.push(email);
+        emailsByAccount.set(accountId, group);
       }
     }
 
     removeEmails(allEmailIds);
     setCurrentSplitId("__priority__");
 
-    addUndoAction({
-      id: `archive-all-${Date.now()}`,
-      type: "archive",
-      threadCount: threads.length,
-      accountId: currentAccountId,
-      emails: allEmails,
-      scheduledAt: Date.now(),
-      delayMs: 5000,
-      archiveReadyThreadIds,
-    });
-  }, [currentAccountId, threads, removeEmails, setCurrentSplitId, addUndoAction]);
+    // Create one undo action per account
+    for (const [accountId, accountEmails] of emailsByAccount) {
+      const accountThreadIds = [...new Set(accountEmails.map((e) => e.threadId))];
+      addUndoAction({
+        id: `archive-all-${accountId}-${Date.now()}`,
+        type: "archive",
+        threadCount: accountThreadIds.length,
+        accountId,
+        emails: accountEmails,
+        scheduledAt: Date.now(),
+        delayMs: 5000,
+        archiveReadyThreadIds: archiveReadyThreadIds.filter((tid) =>
+          accountThreadIds.includes(tid),
+        ),
+      });
+    }
+  }, [threads, removeEmails, setCurrentSplitId, addUndoAction]);
 
-  const currentProgress = currentAccountId ? syncProgress[currentAccountId] : null;
+  // In unified mode, show sync progress for the first actively syncing account
+  const currentProgress = currentAccountId
+    ? syncProgress[currentAccountId]
+    : Object.values(syncProgress).find((p) => p && p.fetched < p.total) || null;
   const isInitialSyncing = currentProgress && currentProgress.fetched < currentProgress.total;
+
+  // Account info maps for unified view — shows which account each email belongs to
+  const isUnifiedView = currentAccountId === null;
+  const accountInfoMap = useMemo(
+    () =>
+      new Map(
+        accounts.map((a) => [a.id, { label: a.label || a.email.split("@")[0], color: a.color }]),
+      ),
+    [accounts],
+  );
 
   const isPrefetching = prefetchProgress.status === "running";
   const isAnalyzingTask = isPrefetching && prefetchProgress.currentTask?.type === "analysis";
@@ -688,6 +721,16 @@ export function EmailList() {
                   density={inboxDensity}
                   onClick={(e) => handleThreadClick(thread, e)}
                   onCheckboxChange={() => toggleThreadSelected(thread.threadId)}
+                  accountLabel={
+                    isUnifiedView
+                      ? accountInfoMap.get(thread.latestEmail.accountId || "")?.label
+                      : undefined
+                  }
+                  accountColor={
+                    isUnifiedView
+                      ? accountInfoMap.get(thread.latestEmail.accountId || "")?.color
+                      : undefined
+                  }
                 />
               </div>
             ))}
@@ -749,6 +792,16 @@ export function EmailList() {
                     onCheckboxChange={() => handleCheckboxToggle(thread.threadId)}
                     snoozeInfo={isSnoozedView ? snoozedThreads.get(thread.threadId) : undefined}
                     returnTime={unsnoozedReturnTimes.get(thread.threadId)}
+                    accountLabel={
+                      isUnifiedView
+                        ? accountInfoMap.get(thread.latestEmail.accountId || "")?.label
+                        : undefined
+                    }
+                    accountColor={
+                      isUnifiedView
+                        ? accountInfoMap.get(thread.latestEmail.accountId || "")?.color
+                        : undefined
+                    }
                   />
                 </div>
               );

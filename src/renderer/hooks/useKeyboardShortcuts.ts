@@ -78,21 +78,6 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
   const gPrefixRef = useRef(false);
   const gPrefixTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Open find bar and ensure the input is focused — handles the case where
-  // the bar is already open but input lost focus (standard Cmd+F UX).
-  // The 100ms delay ensures the FindBar component has mounted (React render +
-  // commit) before we query the DOM for the input element.
-  function openAndFocusFindBar() {
-    useAppStore.getState().openFindBar();
-    setTimeout(() => {
-      const input = document.querySelector<HTMLInputElement>('[data-testid="find-bar-input"]');
-      if (input) {
-        input.focus();
-        input.select();
-      }
-    }, 100);
-  }
-
   // Single event listener registered once. All state is read fresh from the
   // Zustand store via getState() at keypress time, eliminating stale closures.
   useEffect(() => {
@@ -233,12 +218,12 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         return;
       }
 
-      // Cmd+F (macOS) / Ctrl+F (Windows/Linux) for find-in-page
+      // Cmd+F (macOS) / Ctrl+F (Windows/Linux) opens inbox search
       // Don't intercept Ctrl+F on macOS — it's Emacs cursor-forward in text inputs
       const isMac = navigator.platform.startsWith("Mac");
       if (e.key === "f" && (isMac ? e.metaKey : e.ctrlKey)) {
         e.preventDefault();
-        openAndFocusFindBar();
+        openSearch();
         return;
       }
 
@@ -274,6 +259,22 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         e.preventDefault();
         state.selectAllThreads(visibleThreads.map((t) => t.threadId));
         return;
+      }
+
+      // Cmd+1..9: switch accounts. Cmd+N when already on account N → all inboxes.
+      if ((e.metaKey || e.ctrlKey) && e.key >= "1" && e.key <= "9") {
+        const index = parseInt(e.key, 10) - 1;
+        if (index < accounts.length) {
+          e.preventDefault();
+          const targetAccount = accounts[index];
+          if (currentAccountId === targetAccount.id) {
+            // Already on this account → toggle to unified view
+            state.setCurrentAccountId(null);
+          } else {
+            state.setCurrentAccountId(targetAccount.id);
+          }
+          return;
+        }
       }
 
       // Let standard modifier shortcuts (Cmd+C, Cmd+V, Cmd+X, etc.) pass through.
@@ -482,10 +483,12 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
 
       // --- Helper: archive selected thread (all messages) ---
       const archiveSelected = () => {
-        if (!selectedEmailId || !selectedThreadId || !currentAccountId) return;
+        if (!selectedEmailId || !selectedThreadId) return;
 
         // Collect ALL emails in the thread for optimistic removal
         const threadEmails = getThreadEmails(selectedThreadId);
+        const threadAccountId = threadEmails[0]?.accountId;
+        if (!threadAccountId) return;
         const threadEmailIds = threadEmails.map((item) => item.id);
 
         const isArchiveReady = currentSplitId === "__archive-ready__";
@@ -536,7 +539,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
           id: `archive-${selectedThreadId}-${Date.now()}`,
           type: "archive",
           threadCount: 1,
-          accountId: currentAccountId,
+          accountId: threadAccountId,
           emails: [...threadEmails],
           scheduledAt: Date.now(),
           delayMs: 5000,
@@ -549,9 +552,11 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
 
       // --- Helper: trash selected thread ---
       const trashSelected = () => {
-        if (!selectedEmailId || !selectedThreadId || !currentAccountId) return;
+        if (!selectedEmailId || !selectedThreadId) return;
 
         const threadEmails = getThreadEmails(selectedThreadId);
+        const threadAccountId = threadEmails[0]?.accountId;
+        if (!threadAccountId) return;
         const threadEmailIds = threadEmails.map((item) => item.id);
 
         // Atomically remove + advance in one render to prevent flicker
@@ -600,7 +605,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
           id: `trash-${selectedThreadId}-${Date.now()}`,
           type: "trash",
           threadCount: 1,
-          accountId: currentAccountId,
+          accountId: threadAccountId,
           emails: [...threadEmails],
           scheduledAt: Date.now(),
           delayMs: 5000,
@@ -611,7 +616,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
 
       // --- Helper: mark selected thread as unread ---
       const markSelectedUnread = () => {
-        if (!selectedThreadId || !currentAccountId) return;
+        if (!selectedThreadId) return;
 
         const threadEmails = emails.filter((item) => item.threadId === selectedThreadId);
         if (threadEmails.length === 0) return;
@@ -619,6 +624,9 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         const latestEmail = threadEmails.reduce((a, b) =>
           new Date(a.date).getTime() >= new Date(b.date).getTime() ? a : b,
         );
+
+        const threadAccountId = latestEmail.accountId;
+        if (!threadAccountId) return;
 
         const currentLabels = latestEmail.labelIds || ["INBOX"];
 
@@ -630,7 +638,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
             id: `mark-unread-${selectedThreadId}-${Date.now()}`,
             type: "mark-unread",
             threadCount: 1,
-            accountId: currentAccountId,
+            accountId: threadAccountId,
             emails: [latestEmail],
             scheduledAt: Date.now(),
             delayMs: 5000,
@@ -1105,9 +1113,10 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
   // Listen for Cmd+F routed from main process (Electron's default menu
   // captures Cmd+F before the renderer sees it, so the main process
   // intercepts it via before-input-event and sends find:open instead).
+  // We route it to inbox search rather than find-in-page.
   useEffect(() => {
     window.api.find.onOpen(() => {
-      openAndFocusFindBar();
+      useAppStore.getState().openSearch();
     });
     return () => {
       window.api.find.removeOpenListener();
@@ -1169,8 +1178,7 @@ export function getKeyboardShortcuts(bindings: "superhuman" | "gmail") {
       { key: "f", description: "Forward" },
     ],
     search: [
-      { key: "/", description: "Open search" },
-      { key: "Cmd+F", description: "Find in page" },
+      { key: "/ or Cmd+F", description: "Open search" },
       { key: "Cmd+K", description: "Command palette" },
       { key: "Cmd+J", description: "Agent action palette" },
     ],

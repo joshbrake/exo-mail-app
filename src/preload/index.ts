@@ -61,8 +61,8 @@ const api = {
       ipcRenderer.invoke("drafts:save", { emailId, body, composeMode, to, cc, bcc }),
     refine: (emailId: string, currentDraft: string, critique: string): Promise<unknown> =>
       ipcRenderer.invoke("drafts:refine", { emailId, currentDraft, critique }),
-    rerunAgent: (emailId: string): Promise<unknown> =>
-      ipcRenderer.invoke("drafts:rerun-agent", { emailId }),
+    rerunAgent: (emailId: string, instructions?: string): Promise<unknown> =>
+      ipcRenderer.invoke("drafts:rerun-agent", { emailId, instructions }),
     rerunAllAgents: (): Promise<unknown> => ipcRenderer.invoke("drafts:rerun-all-agents"),
   },
 
@@ -353,6 +353,12 @@ const api = {
     setPrimary: (accountId: string): Promise<unknown> =>
       ipcRenderer.invoke("accounts:set-primary", { accountId }),
     cancelAdd: (): Promise<void> => ipcRenderer.invoke("accounts:cancel-add"),
+    updateAppearance: (
+      accountId: string,
+      opts: { color?: string | null; label?: string | null },
+    ): Promise<unknown> => ipcRenderer.invoke("accounts:update-appearance", { accountId, ...opts }),
+    reorder: (accountIds: string[]): Promise<unknown> =>
+      ipcRenderer.invoke("accounts:reorder", { accountIds }),
     onAddProgress: (callback: (data: { phase: string }) => void): (() => void) => {
       const handler = (_: Electron.IpcRendererEvent, data: { phase: string }) => callback(data);
       ipcRenderer.on("accounts:add-progress", handler);
