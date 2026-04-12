@@ -293,6 +293,34 @@ export interface ExtensionAPI {
     handler: () => Promise<void>,
     options?: { checkAuth?: () => Promise<boolean> },
   ): void;
+
+  /**
+   * Register an IPC handler that can be invoked from the renderer
+   * via `window.api.extensions.invoke(extensionId, method, params)`.
+   *
+   * This is the preferred way for extensions to expose IPC endpoints,
+   * especially for distributable extensions that can't modify the preload.
+   */
+  registerIpcHandler(method: string, handler: (params: unknown) => Promise<unknown>): void;
+
+  /**
+   * AI capabilities — allows extensions to use Claude without importing
+   * internal services directly. Essential for distributable extensions.
+   */
+  ai: {
+    /**
+     * Create a message using the Claude API.
+     * The caller is automatically attributed to this extension.
+     */
+    createMessage(params: {
+      model: string;
+      max_tokens: number;
+      system?: string;
+      messages: Array<{ role: "user" | "assistant"; content: string }>;
+    }): Promise<{
+      content: Array<{ type: "text"; text: string } | { type: string; [key: string]: unknown }>;
+    }>;
+  };
 }
 
 // =============================================================================

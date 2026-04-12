@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow, dialog } from "electron";
 import { readFileSync } from "fs";
 import { getExtensionHost } from "../extensions";
-import { checkExtensionAuth, hasCheckAuth } from "../extensions/extension-api";
+import { checkExtensionAuth, hasCheckAuth, invokeExtensionIpc } from "../extensions/extension-api";
 import { prefetchService } from "../services/prefetch-service";
 import { deleteNeedsAuthEnrichments, getEmail, getEmailsByThread } from "../db";
 import { getProvidersNeedingAuth } from "../agents/private-providers-main";
@@ -378,6 +378,32 @@ export function registerExtensionsIpc(): void {
         }
         return { success: true, data: result };
       } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+      }
+    },
+  );
+
+  // Generic extension IPC — allows extensions to expose methods to the renderer
+  // without requiring changes to the preload script.
+  // Renderer calls: window.api.extensions.invoke(extensionId, method, params)
+  ipcMain.handle(
+    "extensions:invoke",
+    async (
+      _,
+      {
+        extensionId,
+        method,
+        params,
+      }: { extensionId: string; method: string; params: unknown },
+    ): Promise<{ success: boolean; data?: unknown; error?: string }> => {
+      try {
+        const result = await invokeExtensionIpc(extensionId, method, params);
+        return { success: true, data: result };
+      } catch (error) {
+        log.error(
+          { err: error },
+          `[Extensions IPC] invoke error: ${extensionId}:${method}`,
+        );
         return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
       }
     },
