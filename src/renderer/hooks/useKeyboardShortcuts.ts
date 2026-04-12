@@ -1069,10 +1069,11 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
           state.cycleSplitTab(e.shiftKey ? -1 : 1);
           break;
 
-        // Switch sidebar tab
+        // Switch sidebar tab (b forward, Shift+b backward)
         case "b":
+        case "B":
           e.preventDefault();
-          state.cycleSidebarTab();
+          state.cycleSidebarTab(e.shiftKey ? -1 : 1);
           break;
 
         // z: undo last action (Gmail only — no modifier needed)
