@@ -1,6 +1,7 @@
 import type { ExtensionAPI, EnrichmentProvider, BadgeProvider } from "../../shared/extension-types";
 import { getExtensionStorage, setExtensionStorage } from "../db";
 import { createLogger } from "../services/logger";
+import { createMessage } from "../services/anthropic-service";
 
 const log = createLogger("extension-api");
 
@@ -21,6 +22,9 @@ const authHandlers: Map<
   string,
   { handler: () => Promise<void>; checkAuth?: () => Promise<boolean> }
 > = new Map();
+
+// IPC handlers registered by extensions (extensionId:method -> handler)
+const extensionIpcHandlers: Map<string, (params: unknown) => Promise<unknown>> = new Map();
 
 /**
  * Set the callback for extension auth required events
@@ -99,7 +103,58 @@ export function createExtensionAPI(extensionId: string): ExtensionAPI {
       log.info(`[Extensions] Registered auth handler for ${extensionId}`);
       authHandlers.set(extensionId, { handler, checkAuth: options?.checkAuth });
     },
+
+    registerIpcHandler(method: string, handler: (params: unknown) => Promise<unknown>): void {
+      const key = `${extensionId}:${method}`;
+      extensionIpcHandlers.set(key, handler);
+      log.info(`[Extensions] Registered IPC handler: ${key}`);
+    },
+
+    ai: {
+      async createMessage(params) {
+        const response = await createMessage(
+          {
+            model: params.model,
+            max_tokens: params.max_tokens,
+            system: params.system,
+            messages: params.messages,
+          },
+          {
+            caller: `ext:${extensionId}`,
+          },
+        );
+        return response;
+      },
+    },
   };
+}
+
+/**
+ * Invoke an extension's registered IPC handler.
+ * Called by the `extensions:invoke` IPC handler.
+ */
+export async function invokeExtensionIpc(
+  extensionId: string,
+  method: string,
+  params: unknown,
+): Promise<unknown> {
+  const key = `${extensionId}:${method}`;
+  const handler = extensionIpcHandlers.get(key);
+  if (!handler) {
+    throw new Error(`No IPC handler registered for ${key}`);
+  }
+  return handler(params);
+}
+
+/**
+ * Remove all IPC handlers for an extension (called on deactivate)
+ */
+export function removeExtensionIpcHandlers(extensionId: string): void {
+  for (const key of extensionIpcHandlers.keys()) {
+    if (key.startsWith(`${extensionId}:`)) {
+      extensionIpcHandlers.delete(key);
+    }
+  }
 }
 
 /**
