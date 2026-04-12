@@ -187,25 +187,27 @@ function TaskCard({
   useEffect(() => autoResize(descRef.current), [editedDescription, autoResize]);
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 relative group">
-      <button
-        onClick={onDismiss}
-        className="absolute top-1.5 right-1.5 p-0.5 rounded text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Dismiss suggestion"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      <textarea
-        ref={titleRef}
-        value={editedTitle}
-        onChange={(e) => onUpdate({ editedTitle: e.target.value.replace(/\n/g, " ") })}
-        className="w-full text-sm font-medium bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none overflow-hidden"
-        placeholder="Task title"
-        rows={1}
-        disabled={status === "creating"}
-      />
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2">
+      <div className="flex items-start gap-1">
+        <textarea
+          ref={titleRef}
+          value={editedTitle}
+          onChange={(e) => onUpdate({ editedTitle: e.target.value.replace(/\n/g, " ") })}
+          className="flex-1 min-w-0 text-sm font-medium bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none overflow-hidden"
+          placeholder="Task title"
+          rows={1}
+          disabled={status === "creating"}
+        />
+        <button
+          onClick={onDismiss}
+          className="flex-shrink-0 p-0.5 rounded text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors mt-0.5"
+          title="Dismiss suggestion"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
       <textarea
         ref={descRef}
         value={editedDescription}
