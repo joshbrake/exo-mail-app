@@ -1751,12 +1751,15 @@ export default function App() {
                           }`}
                         >
                           <span className="w-2 h-2 rounded-full bg-purple-500" />
-                          <span>All Inboxes</span>
+                          <span className="flex-1">All Inboxes</span>
+                          <kbd className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                            {"\u2318"}0
+                          </kbd>
                         </button>
                         <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
                       </>
                     )}
-                    {accounts.map((account) => (
+                    {accounts.map((account, index) => (
                       <button
                         key={account.id}
                         onClick={() => handleAccountSwitch(account.id)}
@@ -1785,9 +1788,19 @@ export default function App() {
                           />
                           <span className="truncate">{account.label || account.email}</span>
                         </div>
-                        {account.isPrimary && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">Primary</span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {account.isPrimary && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              Primary
+                            </span>
+                          )}
+                          {index < 9 && (
+                            <kbd className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                              {"\u2318"}
+                              {index + 1}
+                            </kbd>
+                          )}
+                        </div>
                       </button>
                     ))}
                     <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">

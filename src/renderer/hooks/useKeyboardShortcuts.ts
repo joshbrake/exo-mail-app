@@ -261,27 +261,21 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         return;
       }
 
-      // Cmd+1..9: switch accounts. Cmd+N when already on account N → all inboxes.
+      // Cmd+0: switch to All Inboxes (unified view)
+      if ((e.metaKey || e.ctrlKey) && e.key === "0") {
+        e.preventDefault();
+        state.setCurrentAccountId(null);
+        return;
+      }
+
+      // Cmd+1..9: switch accounts
       if ((e.metaKey || e.ctrlKey) && e.key >= "1" && e.key <= "9") {
         const index = parseInt(e.key, 10) - 1;
         if (index < accounts.length) {
           e.preventDefault();
-          const targetAccount = accounts[index];
-          if (currentAccountId === targetAccount.id) {
-            // Already on this account → toggle to unified view
-            state.setCurrentAccountId(null);
-          } else {
-            state.setCurrentAccountId(targetAccount.id);
-          }
+          state.setCurrentAccountId(accounts[index].id);
           return;
         }
-      }
-
-      // Ctrl+Tab / Ctrl+Shift+Tab: cycle inbox split tabs
-      if ((e.metaKey || e.ctrlKey) && e.key === "Tab") {
-        e.preventDefault();
-        state.cycleSplitTab(e.shiftKey ? -1 : 1);
-        return;
       }
 
       // Let standard modifier shortcuts (Cmd+C, Cmd+V, Cmd+X, etc.) pass through.
@@ -1069,6 +1063,12 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
           }
           break;
 
+        // Tab / Shift+Tab: cycle inbox split tabs
+        case "Tab":
+          e.preventDefault();
+          state.cycleSplitTab(e.shiftKey ? -1 : 1);
+          break;
+
         // Switch sidebar tab
         case "b":
           e.preventDefault();
@@ -1190,8 +1190,10 @@ export function getKeyboardShortcuts(bindings: "superhuman" | "gmail") {
       { key: "Cmd+J", description: "Agent action palette" },
     ],
     other: [
+      { key: "Tab", description: "Next inbox tab" },
       { key: "b", description: "Switch sidebar tab" },
-      { key: "Ctrl+Tab", description: "Next inbox tab" },
+      { key: "Cmd+0", description: "All Inboxes" },
+      { key: "Cmd+1-9", description: "Switch account" },
       { key: "Cmd+,", description: "Settings" },
       { key: "?", description: "Show shortcuts" },
     ],
