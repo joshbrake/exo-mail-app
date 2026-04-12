@@ -47,6 +47,27 @@ function CalendarIcon({ active }: { active: boolean }) {
   );
 }
 
+function ToolsIcon({ active }: { active: boolean }) {
+  const cls = active
+    ? "text-blue-600 dark:text-blue-400"
+    : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300";
+  return (
+    <svg
+      className={`w-4 h-4 ${cls}`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V19.5m0 2.25l-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m-13.5 0L3 16.5v-2.25"
+      />
+    </svg>
+  );
+}
+
 function AgentIcon({ active }: { active: boolean }) {
   const cls = active
     ? "text-purple-600 dark:text-purple-400"
@@ -68,17 +89,19 @@ function AgentIcon({ active }: { active: boolean }) {
   );
 }
 
-type SidebarTab = "sender" | "email" | "agent";
+type SidebarTab = "sender" | "email" | "tools" | "agent";
 
 const TAB_ICONS: Record<SidebarTab, ({ active }: { active: boolean }) => React.ReactElement> = {
   sender: PersonIcon,
   email: CalendarIcon,
+  tools: ToolsIcon,
   agent: AgentIcon,
 };
 
 const TAB_LABELS: Record<SidebarTab, string> = {
   sender: "Sender",
   email: "Calendar",
+  tools: "Tools",
   agent: "Agent",
 };
 
@@ -182,19 +205,21 @@ export const EmailPreviewSidebar = memo(function EmailPreviewSidebar() {
   // Split panels by scope
   const senderPanels = extensionPanels.filter((p) => (p.panelInfo.scope ?? "sender") === "sender");
   const emailPanels = extensionPanels.filter((p) => p.panelInfo.scope === "email");
+  const toolsPanels = extensionPanels.filter((p) => p.panelInfo.scope === "tools");
 
   // Update available tabs based on registered panels — agent tab is always available
   useEffect(() => {
     const tabs: SidebarTab[] = [];
     if (senderPanels.length > 0) tabs.push("sender");
     if (emailPanels.length > 0) tabs.push("email");
+    if (toolsPanels.length > 0) tabs.push("tools");
     tabs.push("agent");
     // Only update if the tabs have actually changed
     const current = availableTabs;
     if (tabs.length !== current.length || tabs.some((t, i) => t !== current[i])) {
       setAvailableTabs(tabs);
     }
-  }, [senderPanels.length, emailPanels.length, availableTabs, setAvailableTabs]);
+  }, [senderPanels.length, emailPanels.length, toolsPanels.length, availableTabs, setAvailableTabs]);
 
   // Ensure current tab is valid
   useEffect(() => {
@@ -334,7 +359,12 @@ export const EmailPreviewSidebar = memo(function EmailPreviewSidebar() {
   const senderName = senderMatch ? senderMatch[1].trim() : senderSource.from;
   const senderEmail = senderSource.from.match(/<([^>]+)>/)?.[1] || senderSource.from;
 
-  const activePanels = sidebarTab === "sender" ? senderPanels : emailPanels;
+  const activePanels =
+    sidebarTab === "sender"
+      ? senderPanels
+      : sidebarTab === "tools"
+        ? toolsPanels
+        : emailPanels;
 
   return (
     <div className="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
@@ -349,7 +379,7 @@ export const EmailPreviewSidebar = memo(function EmailPreviewSidebar() {
                 <button
                   key={tab}
                   onClick={() => setSidebarTab(tab)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium transition-colors min-w-0 ${
                     isActive
                       ? tab === "agent"
                         ? "text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400 bg-white dark:bg-gray-800"
@@ -359,7 +389,7 @@ export const EmailPreviewSidebar = memo(function EmailPreviewSidebar() {
                   title={`${TAB_LABELS[tab]} (press b to switch)`}
                 >
                   {Icon && <Icon active={isActive} />}
-                  <span>{TAB_LABELS[tab]}</span>
+                  {availableTabs.length <= 3 && <span>{TAB_LABELS[tab]}</span>}
                 </button>
               );
             })}

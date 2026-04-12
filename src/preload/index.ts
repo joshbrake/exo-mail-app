@@ -873,6 +873,48 @@ const api = {
     },
   },
 
+  // Asana task suggestions
+  asana: {
+    suggestTasks: (params: {
+      emailId: string;
+      subject: string;
+      from: string;
+      to: string;
+      body: string;
+      threadContext: string;
+      userContext?: string;
+    }): Promise<unknown> => ipcRenderer.invoke("asana:suggest-tasks", params),
+    createTask: (params: {
+      name: string;
+      notes: string;
+      dueOn: string | null;
+      projectGid: string;
+      workspaceGid: string;
+    }): Promise<unknown> => ipcRenderer.invoke("asana:create-task", params),
+    getWorkspaces: (): Promise<unknown> => ipcRenderer.invoke("asana:get-workspaces"),
+    getProjects: (params: { workspaceGid: string }): Promise<unknown> =>
+      ipcRenderer.invoke("asana:get-projects", params),
+    getUserTaskList: (params: { workspaceGid: string }): Promise<unknown> =>
+      ipcRenderer.invoke("asana:get-user-task-list", params),
+    checkAuth: (): Promise<unknown> => ipcRenderer.invoke("asana:check-auth"),
+    saveToken: (params: { token: string }): Promise<unknown> =>
+      ipcRenderer.invoke("asana:save-token", params),
+    getLinkedTasks: (params: { threadId: string }): Promise<unknown> =>
+      ipcRenderer.invoke("asana:get-linked-tasks", params),
+    linkTask: (params: {
+      threadId: string;
+      gid: string;
+      name: string;
+      permalink: string;
+    }): Promise<unknown> => ipcRenderer.invoke("asana:link-task", params),
+    getDraftTasks: (params: { threadId: string }): Promise<unknown> =>
+      ipcRenderer.invoke("asana:get-draft-tasks", params),
+    saveDraftTasks: (params: {
+      threadId: string;
+      drafts: Array<{ title: string; description: string; dueDate: string }>;
+    }): Promise<unknown> => ipcRenderer.invoke("asana:save-draft-tasks", params),
+  },
+
   // Attachment operations
   attachments: {
     download: (

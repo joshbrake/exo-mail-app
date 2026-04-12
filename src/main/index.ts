@@ -19,6 +19,7 @@ ipcMain.on("debug:log", (_, msg: string) => {
 import { ExtensionManifestSchema } from "../shared/extension-types";
 import webSearchPackageJson from "../extensions/mail-ext-web-search/package.json";
 import calendarPackageJson from "../extensions/mail-ext-calendar/package.json";
+import asanaPackageJson from "../extensions/mail-ext-asana/package.json";
 import { createWindow, getIconPath } from "./window";
 import { registerGmailIpc } from "./ipc/gmail.ipc";
 import { registerAnalysisIpc } from "./ipc/analysis.ipc";
@@ -55,6 +56,7 @@ import { calendarSyncService } from "./services/calendar-sync";
 import { emailSyncService } from "./services/email-sync";
 import * as webSearchExtension from "../extensions/mail-ext-web-search/src/index";
 import * as calendarExtension from "../extensions/mail-ext-calendar/src/index";
+import * as asanaExtension from "../extensions/mail-ext-asana/src/index";
 
 // Skip Keychain for Chromium's internal cookie/localStorage encryption.
 // Without this, macOS prompts "wants to access data from other apps" on first launch
@@ -548,10 +550,12 @@ app.whenReady().then(async () => {
 
   const webSearchManifest = ExtensionManifestSchema.parse(webSearchPackageJson.mailExtension);
   const calendarManifest = ExtensionManifestSchema.parse(calendarPackageJson.mailExtension);
+  const asanaManifest = ExtensionManifestSchema.parse(asanaPackageJson.mailExtension);
 
   Promise.all([
     extensionHost.registerBundledExtensionFull(webSearchManifest, webSearchExtension),
     extensionHost.registerBundledExtensionFull(calendarManifest, calendarExtension),
+    extensionHost.registerBundledExtensionFull(asanaManifest, asanaExtension),
   ])
     .then(() => {
       log.info("[Extensions] Bundled extensions activated");
