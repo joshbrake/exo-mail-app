@@ -11,6 +11,8 @@ interface AddressInputProps {
   nameMap?: Map<string, string>;
   /** Called when Tab is pressed so the parent can move focus to the next field */
   onTab?: () => void;
+  /** Called when Shift+Tab is pressed so the parent can move focus to the previous field */
+  onShiftTab?: () => void;
   /** External ref to allow parent to programmatically focus this input */
   inputRef?: React.RefObject<HTMLInputElement>;
   /** Identifier for this field (e.g., "to", "cc", "bcc") — enables drag-and-drop between fields */
@@ -31,6 +33,7 @@ export function AddressInput({
   autoFocus,
   nameMap,
   onTab,
+  onShiftTab,
   inputRef: externalRef,
   fieldId,
   onChipDrop,
@@ -157,6 +160,13 @@ export function AddressInput({
         isTabNavigating.current = true;
         onTab();
       }
+    } else if (e.key === "Tab" && e.shiftKey) {
+      e.preventDefault();
+      addTypedValue();
+      if (onShiftTab) {
+        isTabNavigating.current = true;
+        onShiftTab();
+      }
     } else if (e.key === "Backspace" && inputValue === "" && value.length > 0) {
       onChange(value.slice(0, -1));
     }
@@ -264,7 +274,7 @@ export function AddressInput({
                     }
                   : undefined
               }
-              className={`group/chip relative inline-flex items-center text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap rounded-full pl-1.5 pr-5 py-0.5 -my-0.5 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${hasName ? "cursor-pointer" : ""} ${fieldId ? "cursor-grab active:cursor-grabbing" : ""}`}
+              className={`group/chip inline-flex items-center gap-0.5 text-sm text-gray-700 dark:text-gray-200 whitespace-nowrap rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 pl-2 pr-1 py-0.5 mr-1 mb-0.5 mt-0.5 transition-colors ${hasName ? "cursor-pointer" : ""} ${fieldId ? "cursor-grab active:cursor-grabbing" : ""}`}
               data-testid="address-chip"
               role={hasName ? "button" : undefined}
               tabIndex={hasName ? 0 : undefined}
@@ -296,7 +306,7 @@ export function AddressInput({
                   e.stopPropagation();
                   handleRemove(email);
                 }}
-                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover/chip:opacity-100 z-10"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-sm p-0.5"
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -307,11 +317,6 @@ export function AddressInput({
                   />
                 </svg>
               </button>
-              {(i < value.length - 1 || inputValue !== "") && (
-                <span className="ml-0.5 text-gray-400 dark:text-gray-500 select-none group-hover/chip:invisible">
-                  ·
-                </span>
-              )}
             </span>
           );
         })}
