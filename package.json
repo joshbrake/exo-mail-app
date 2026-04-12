@@ -5,7 +5,7 @@
   "description": "Automated email draft generator using Claude AI and Gmail",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ankitvgupta/mail-app.git"
+    "url": "https://github.com/joshbrake/exo-mail-app.git"
   },
   "type": "module",
   "main": "./out/main/index.js",
@@ -151,8 +151,8 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "ankitvgupta",
-      "repo": "mail-app",
+      "owner": "joshbrake",
+      "repo": "exo-mail-app",
       "private": true
     },
     "directories": {
