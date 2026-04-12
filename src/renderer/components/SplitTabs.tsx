@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useAppStore, useThreadedEmails, type EmailThread } from "../store";
 import type { InboxSplit } from "../../shared/types";
 import { emailMatchesSplit } from "../utils/split-conditions";
@@ -19,7 +19,7 @@ function Tab({ active, onClick, count, children }: TabProps) {
     <button
       onClick={onClick}
       className={`
-        px-3 py-2 text-sm font-medium whitespace-nowrap
+        inline-flex items-center px-3 py-2 text-sm font-medium whitespace-nowrap
         border-b-2 transition-colors focus:outline-none
         ${
           active
@@ -114,6 +114,21 @@ export function SplitTabs() {
 
   // Sort splits by order
   const sortedSplits = useMemo(() => [...splits].sort((a, b) => a.order - b.order), [splits]);
+
+  // Register available tabs for keyboard cycling
+  const setAvailableSplitTabs = useAppStore((state) => state.setAvailableSplitTabs);
+  const tabOrder = useMemo(() => {
+    const ids: (string | null)[] = ["__priority__", "__other__", "__archive-ready__"];
+    for (const split of sortedSplits) ids.push(split.id);
+    if (draftsCount > 0) ids.push("__drafts__");
+    if (snoozedCount > 0) ids.push("__snoozed__");
+    ids.push(null); // "All" tab
+    return ids;
+  }, [sortedSplits, draftsCount, snoozedCount]);
+
+  useEffect(() => {
+    setAvailableSplitTabs(tabOrder);
+  }, [tabOrder, setAvailableSplitTabs]);
 
   // Always show the tab bar — Priority, Other, Archive Ready always visible; All on the far right
   return (
