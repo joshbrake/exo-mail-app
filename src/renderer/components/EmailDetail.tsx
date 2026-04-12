@@ -376,11 +376,41 @@ function EmailBodyRenderer({
     );
   }
 
+  // Linkify URLs in plain text so they render as clickable <a> tags
+  const linkified = useMemo(() => {
+    const urlRe = /https?:\/\/[^\s<>"')\]]+/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = urlRe.exec(decodedBody)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(decodedBody.slice(lastIndex, match.index));
+      }
+      const url = match[0];
+      parts.push(
+        <a
+          key={match.index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 dark:text-blue-400 underline"
+        >
+          {url}
+        </a>,
+      );
+      lastIndex = urlRe.lastIndex;
+    }
+    if (lastIndex < decodedBody.length) {
+      parts.push(decodedBody.slice(lastIndex));
+    }
+    return parts.length > 0 ? parts : [decodedBody];
+  }, [decodedBody]);
+
   return (
     <div
       className={`whitespace-pre-wrap text-sm leading-relaxed ${useLightMode ? "text-gray-700" : "text-gray-300"}`}
     >
-      {decodedBody}
+      {linkified}
     </div>
   );
 }
