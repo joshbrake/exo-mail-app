@@ -55,8 +55,7 @@ tests/screenshots/
 # Dev mode data directory (isolated from production)
 .dev-data/
 
-# Private extensions and agents (copied in at build time by mail-app)
-src/extensions-private/
+# Private agents (copied in at build time by mail-app)
 src/agents-private/
 
 # gstack QA reports

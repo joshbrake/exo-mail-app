@@ -1,0 +1,53 @@
+{
+  "name": "mail-ext-asana",
+  "version": "1.0.0",
+  "description": "AI-powered Asana task suggestions from emails",
+  "main": "./src/index.ts",
+  "mailExtension": {
+    "id": "asana",
+    "displayName": "Asana Tasks",
+    "description": "Suggest and create Asana tasks from email content using AI",
+    "builtIn": true,
+    "activationEvents": ["onEmail"],
+    "contributes": {
+      "sidebarPanels": [
+        {
+          "id": "task-suggestions",
+          "title": "Asana Tasks",
+          "priority": 90,
+          "scope": "tools"
+        }
+      ],
+      "settings": [
+        {
+          "id": "enabled",
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Asana task suggestions",
+          "description": "Show AI-suggested Asana tasks in the email sidebar"
+        },
+        {
+          "id": "defaultWorkspaceGid",
+          "type": "string",
+          "default": "",
+          "title": "Default workspace",
+          "description": "Asana workspace GID to use by default"
+        },
+        {
+          "id": "defaultProjectGid",
+          "type": "string",
+          "default": "",
+          "title": "Default project",
+          "description": "Asana project GID to add tasks to by default"
+        },
+        {
+          "id": "systemPrompt",
+          "type": "string",
+          "default": "",
+          "title": "Task extraction prompt",
+          "description": "Custom system prompt for AI task extraction. Leave blank to use the default."
+        }
+      ]
+    }
+  }
+}
