@@ -107,7 +107,7 @@ export function useComposeForm({
   const [to, setTo] = useState<string[]>(() => initialTo.map(extractBareEmail));
   const [cc, setCc] = useState<string[]>(() => initialCc.map(extractBareEmail));
   const [bcc, setBcc] = useState<string[]>(() => initialBcc.map(extractBareEmail));
-  const [showCcBcc, setShowCcBcc] = useState(initialCc.length > 0 || initialBcc.length > 0);
+  const [showCcBcc, setShowCcBcc] = useState(true);
 
   // Auto-expand CC/BCC if they get populated (e.g., async draft restoration)
   useEffect(() => {

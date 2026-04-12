@@ -1337,6 +1337,7 @@ function InlineReply({
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const inlineToInputRef = useRef<HTMLInputElement>(null);
   const inlineCcInputRef = useRef<HTMLInputElement>(null);
   const inlineBccInputRef = useRef<HTMLInputElement>(null);
 
@@ -1819,6 +1820,7 @@ function InlineReply({
                   autoFocus={isForward}
                   nameMap={mergedNameMap}
                   onSuggestionSelected={form.handleSuggestionSelected}
+                  inputRef={inlineToInputRef}
                   onTab={() => {
                     if (form.showCcBcc) inlineCcInputRef.current?.focus();
                     else focusInlineEditor();
@@ -1861,6 +1863,7 @@ function InlineReply({
                   onSuggestionSelected={form.handleSuggestionSelected}
                   inputRef={inlineCcInputRef}
                   onTab={() => inlineBccInputRef.current?.focus()}
+                  onShiftTab={() => inlineToInputRef.current?.focus()}
                   fieldId="cc"
                   onChipDrop={(email, sourceField) =>
                     form.handleRecipientDrop("cc", email, sourceField)
@@ -1876,6 +1879,7 @@ function InlineReply({
                   onSuggestionSelected={form.handleSuggestionSelected}
                   inputRef={inlineBccInputRef}
                   onTab={() => focusInlineEditor()}
+                  onShiftTab={() => inlineCcInputRef.current?.focus()}
                   fieldId="bcc"
                   onChipDrop={(email, sourceField) =>
                     form.handleRecipientDrop("bcc", email, sourceField)
@@ -1991,6 +1995,10 @@ function InlineReply({
           autoFocus={!isForward && !restoredDraft?.skipAutoFocus}
           onAddToCc={handleMentionAddToCc}
           recipientEmail={form.to[0]}
+          onShiftTab={() => {
+            if (form.showCcBcc) inlineBccInputRef.current?.focus();
+            else inlineToInputRef.current?.focus();
+          }}
         />
         {/* Attachments */}
         {form.loadingForwardAttachments && (
@@ -2287,6 +2295,7 @@ function NewEmailCompose({
   }, [storeDraftUpdatedAt]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const toInputRef = useRef<HTMLInputElement>(null);
   const ccInputRef = useRef<HTMLInputElement>(null);
   const bccInputRef = useRef<HTMLInputElement>(null);
   const subjectInputRef = useRef<HTMLInputElement>(null);
@@ -2395,6 +2404,7 @@ function NewEmailCompose({
                 autoFocus
                 nameMap={form.nameMap}
                 onSuggestionSelected={form.handleSuggestionSelected}
+                inputRef={toInputRef}
                 onTab={() => {
                   if (form.showCcBcc) ccInputRef.current?.focus();
                   else subjectInputRef.current?.focus();
@@ -2440,6 +2450,7 @@ function NewEmailCompose({
                 onSuggestionSelected={form.handleSuggestionSelected}
                 inputRef={ccInputRef}
                 onTab={() => bccInputRef.current?.focus()}
+                onShiftTab={() => toInputRef.current?.focus()}
                 fieldId="cc"
                 onChipDrop={(email, sourceField) =>
                   form.handleRecipientDrop("cc", email, sourceField)
@@ -2455,6 +2466,7 @@ function NewEmailCompose({
                 onSuggestionSelected={form.handleSuggestionSelected}
                 inputRef={bccInputRef}
                 onTab={() => subjectInputRef.current?.focus()}
+                onShiftTab={() => ccInputRef.current?.focus()}
                 fieldId="bcc"
                 onChipDrop={(email, sourceField) =>
                   form.handleRecipientDrop("bcc", email, sourceField)
@@ -2484,6 +2496,10 @@ function NewEmailCompose({
                 if (e.key === "Tab" && !e.shiftKey) {
                   e.preventDefault();
                   focusEditor();
+                } else if (e.key === "Tab" && e.shiftKey) {
+                  e.preventDefault();
+                  if (form.showCcBcc) bccInputRef.current?.focus();
+                  else toInputRef.current?.focus();
                 }
               }}
               placeholder="Subject"
@@ -2500,6 +2516,7 @@ function NewEmailCompose({
               placeholder="Write your message..."
               onAddToCc={form.handleMentionAddToCc}
               recipientEmail={form.to[0]}
+              onShiftTab={() => subjectInputRef.current?.focus()}
             />
           </div>
 
