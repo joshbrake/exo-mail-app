@@ -7,7 +7,6 @@
 import { registerPanelComponent } from "../ExtensionPanelSlot";
 import { SenderProfilePanel } from "./SenderProfilePanel";
 import { CalendarPanel } from "../../../extensions/mail-ext-calendar/src/renderer/CalendarPanel";
-import { AsanaTaskPanel } from "../../../extensions/mail-ext-asana/src/renderer/AsanaTaskPanel";
 import { registerPrivateExtensions } from "../private-extensions";
 import { loadInstalledExtensionPanels } from "../installed-extensions";
 
@@ -21,9 +20,6 @@ export function registerBundledExtensions(): void {
 
   // Register calendar extension's day-view panel
   registerPanelComponent("calendar", "day-view", CalendarPanel);
-
-  // Register asana extension's task suggestions panel
-  registerPanelComponent("asana", "task-suggestions", AsanaTaskPanel);
 
   // Register private extension panels (loaded from extensions-private/)
   registerPrivateExtensions();
