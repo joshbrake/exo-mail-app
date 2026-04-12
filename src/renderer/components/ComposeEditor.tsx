@@ -39,6 +39,8 @@ interface ComposeEditorProps {
   onAddToCc?: (email: string) => void;
   /** Recipient email for snippet variable resolution */
   recipientEmail?: string;
+  /** Called when Shift+Tab is pressed to navigate back to the previous field */
+  onShiftTab?: () => void;
 }
 
 // Toolbar button component
@@ -681,6 +683,7 @@ export function ComposeEditor({
   autoFocus = false,
   onAddToCc,
   recipientEmail,
+  onShiftTab,
 }: ComposeEditorProps) {
   const isDark = useAppStore((s) => s.resolvedTheme) === "dark";
   const snippets = useAppStore((s) => s.snippets);
@@ -696,6 +699,12 @@ export function ComposeEditor({
   useEffect(() => {
     onAddToCcRef.current = onAddToCc ?? null;
   }, [onAddToCc]);
+
+  // Ref for Shift+Tab callback so editor doesn't need to be recreated
+  const onShiftTabRef = useRef<(() => void) | null>(onShiftTab ?? null);
+  useEffect(() => {
+    onShiftTabRef.current = onShiftTab ?? null;
+  }, [onShiftTab]);
 
   // Stable ref object for the extension (created once)
   const stableRef = useMemo(() => onAddToCcRef, []);
@@ -749,6 +758,14 @@ export function ComposeEditor({
     editorProps: {
       attributes: {
         class: "prose prose-sm max-w-none focus:outline-none min-h-[100px] p-3",
+      },
+      handleKeyDown: (_view: EditorView, event: KeyboardEvent) => {
+        if (event.key === "Tab" && event.shiftKey) {
+          event.preventDefault();
+          onShiftTabRef.current?.();
+          return true;
+        }
+        return false;
       },
       // Handle paste and drop of images
       handlePaste: (view: EditorView, event: ClipboardEvent) => {
