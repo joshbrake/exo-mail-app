@@ -234,8 +234,8 @@ interface AppState {
   viewMode: "split" | "full";
 
   // Sidebar tab state — which sidebar panel group is active
-  sidebarTab: "sender" | "email" | "agent";
-  availableSidebarTabs: ("sender" | "email" | "agent")[];
+  sidebarTab: "sender" | "email" | "tools" | "agent";
+  availableSidebarTabs: ("sender" | "email" | "tools" | "agent")[];
 
   // Network/offline state
   isOnline: boolean;
@@ -247,6 +247,7 @@ interface AppState {
   // Inbox splits state
   splits: InboxSplit[];
   currentSplitId: string | null;
+  availableSplitTabs: (string | null)[];
 
   // Snippets state
   snippets: Snippet[];
@@ -397,9 +398,9 @@ interface AppState {
   setViewMode: (mode: "split" | "full") => void;
 
   // Sidebar tab actions
-  setSidebarTab: (tab: "sender" | "email" | "agent") => void;
+  setSidebarTab: (tab: "sender" | "email" | "tools" | "agent") => void;
   cycleSidebarTab: () => void;
-  setAvailableSidebarTabs: (tabs: ("sender" | "email" | "agent")[]) => void;
+  setAvailableSidebarTabs: (tabs: ("sender" | "email" | "tools" | "agent")[]) => void;
 
   // Network/offline actions
   setOnline: (online: boolean) => void;
@@ -423,6 +424,8 @@ interface AppState {
   // Inbox splits actions
   setSplits: (splits: InboxSplit[]) => void;
   setCurrentSplitId: (id: string | null) => void;
+  setAvailableSplitTabs: (tabs: (string | null)[]) => void;
+  cycleSplitTab: (direction?: 1 | -1) => void;
 
   // Snippets actions
   setSnippets: (snippets: Snippet[]) => void;
@@ -604,6 +607,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Inbox splits state
   splits: [],
   currentSplitId: "__priority__",
+  availableSplitTabs: ["__priority__", "__other__", "__archive-ready__", null],
 
   // Snippets state
   snippets: [],
@@ -1055,6 +1059,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Inbox splits actions
   setSplits: (splits) => set({ splits }),
   setCurrentSplitId: (id) => set({ currentSplitId: id }),
+  setAvailableSplitTabs: (tabs) => set({ availableSplitTabs: tabs }),
+  cycleSplitTab: (direction: 1 | -1 = 1) =>
+    set((state) => {
+      const tabs = state.availableSplitTabs;
+      if (tabs.length <= 1) return state;
+      const currentIndex = tabs.indexOf(state.currentSplitId);
+      const nextIndex = (currentIndex + direction + tabs.length) % tabs.length;
+      return { currentSplitId: tabs[nextIndex] };
+    }),
 
   // Snippets actions
   setSnippets: (snippets) => set({ snippets }),

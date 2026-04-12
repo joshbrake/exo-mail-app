@@ -22,7 +22,7 @@ export const SidebarPanelContributionSchema = z.object({
   id: z.string(),
   title: z.string(),
   priority: z.number().default(50), // Higher = shows first
-  scope: z.enum(["sender", "email"]).default("sender"), // "sender" = needs sender info only, "email" = needs full email body
+  scope: z.enum(["sender", "email", "tools"]).default("sender"), // "sender" = needs sender info only, "email" = needs full email body, "tools" = tools/integrations tab
 });
 
 export type SidebarPanelContribution = z.infer<typeof SidebarPanelContributionSchema>;
@@ -226,7 +226,7 @@ export interface SidebarPanelRegistration {
   extensionId: string;
   title: string;
   priority: number;
-  scope: "sender" | "email";
+  scope: "sender" | "email" | "tools";
   // Component is registered separately in the renderer
 }
 
@@ -351,7 +351,7 @@ export interface ExtensionPanelInfo {
   extensionId: string;
   title: string;
   priority: number;
-  scope: "sender" | "email";
+  scope: "sender" | "email" | "tools";
 }
 
 export interface ExtensionEnrichmentResult {
