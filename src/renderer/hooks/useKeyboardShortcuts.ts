@@ -277,6 +277,13 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         }
       }
 
+      // Ctrl+Tab / Ctrl+Shift+Tab: cycle inbox split tabs
+      if ((e.metaKey || e.ctrlKey) && e.key === "Tab") {
+        e.preventDefault();
+        state.cycleSplitTab(e.shiftKey ? -1 : 1);
+        return;
+      }
+
       // Let standard modifier shortcuts (Cmd+C, Cmd+V, Cmd+X, etc.) pass through.
       // Cmd/Ctrl always bail — these are OS-level shortcuts.
       if (e.metaKey || e.ctrlKey) {
@@ -1184,6 +1191,7 @@ export function getKeyboardShortcuts(bindings: "superhuman" | "gmail") {
     ],
     other: [
       { key: "b", description: "Switch sidebar tab" },
+      { key: "Ctrl+Tab", description: "Next inbox tab" },
       { key: "Cmd+,", description: "Settings" },
       { key: "?", description: "Show shortcuts" },
     ],
