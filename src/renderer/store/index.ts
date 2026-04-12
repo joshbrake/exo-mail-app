@@ -399,7 +399,7 @@ interface AppState {
 
   // Sidebar tab actions
   setSidebarTab: (tab: "sender" | "email" | "tools" | "agent") => void;
-  cycleSidebarTab: () => void;
+  cycleSidebarTab: (direction?: 1 | -1) => void;
   setAvailableSidebarTabs: (tabs: ("sender" | "email" | "tools" | "agent")[]) => void;
 
   // Network/offline actions
@@ -990,12 +990,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // Sidebar tab actions
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
-  cycleSidebarTab: () =>
+  cycleSidebarTab: (direction = 1) =>
     set((state) => {
       const tabs = state.availableSidebarTabs;
       if (tabs.length <= 1) return state;
       const currentIndex = tabs.indexOf(state.sidebarTab);
-      const nextIndex = (currentIndex + 1) % tabs.length;
+      const nextIndex = (currentIndex + direction + tabs.length) % tabs.length;
       return { sidebarTab: tabs[nextIndex] };
     }),
   setAvailableSidebarTabs: (tabs) => set({ availableSidebarTabs: tabs }),

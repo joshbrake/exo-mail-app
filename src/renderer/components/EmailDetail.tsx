@@ -233,7 +233,7 @@ function EmailBodyRenderer({
   useLightMode: boolean;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [iframeHeight, setIframeHeight] = useState(200);
+  const [iframeHeight, setIframeHeight] = useState(0);
 
   // Use the LRU cache to avoid re-running DOMPurify on every email switch.
   // On cache hit this is a Map lookup; on miss it sanitizes and caches the result.
@@ -367,9 +367,11 @@ function EmailBodyRenderer({
         referrerPolicy="no-referrer"
         style={{
           width: "100%",
-          height: `${iframeHeight}px`,
+          height: iframeHeight > 0 ? `${iframeHeight}px` : "0px",
           border: "none",
           display: "block",
+          opacity: iframeHeight > 0 ? 1 : 0,
+          transition: "height 0.15s ease-out, opacity 0.15s ease-out",
         }}
         title="Email content"
       />
@@ -408,7 +410,8 @@ function EmailBodyRenderer({
 
   return (
     <div
-      className={`whitespace-pre-wrap text-sm leading-relaxed ${useLightMode ? "text-gray-700" : "text-gray-300"}`}
+      className={`whitespace-pre-wrap text-sm leading-relaxed px-2 py-1 ${useLightMode ? "text-gray-700" : "text-gray-300"}`}
+      style={{ overflowWrap: "break-word", wordBreak: "break-word" }}
     >
       {linkified}
     </div>
@@ -3797,7 +3800,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
 
         {/* Action buttons (Track Package, Unsubscribe) */}
         {(trackingNumbers.length > 0 || unsubscribeUrl) && (
-          <div className="px-6 py-2.5 border-b border-gray-100 flex items-center gap-2 flex-wrap">
+          <div className="px-6 py-2.5 border-b border-gray-100 dark:border-gray-700/50 flex items-center gap-2 flex-wrap">
             {trackingNumbers.map((t, i) => (
               <button
                 key={i}

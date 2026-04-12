@@ -837,10 +837,14 @@ export default function App() {
           );
           setAccounts(fullAccounts);
 
-          // Set current account to primary or first available
+          // Default to unified "All Inboxes" view when multiple accounts exist
           const primaryAccount = fullAccounts.find((a) => a.isPrimary) || fullAccounts[0];
-          if (primaryAccount) {
+          if (fullAccounts.length > 1) {
+            setCurrentAccountId(null);
+          } else if (primaryAccount) {
             setCurrentAccountId(primaryAccount.id);
+          }
+          if (primaryAccount) {
             // Identify user in PostHog using primary email
             identifyUser(primaryAccount.email, {
               account_count: fullAccounts.length,
