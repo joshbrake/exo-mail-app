@@ -251,10 +251,12 @@ function SearchResultsView() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Scroll selected result into view
+  // Scroll selected result into view within the scroll container
   useEffect(() => {
-    if (!selectedThreadId) return;
-    const el = document.querySelector(`[data-thread-id="${selectedThreadId}"]`);
+    if (!selectedThreadId || !scrollContainerRef.current) return;
+    const el = scrollContainerRef.current.querySelector(
+      `[data-thread-id="${selectedThreadId}"]`,
+    );
     if (el) {
       el.scrollIntoView({ block: "nearest" });
     }
@@ -272,14 +274,16 @@ function SearchResultsView() {
   );
 
   const retryRemoteSearch = useCallback(() => {
-    if (!activeSearchQuery || !currentAccountId || !isOnline) return;
+    if (!activeSearchQuery || !isOnline) return;
+    const accountId = currentAccountId || accounts[0]?.id;
+    if (!accountId) return;
     const query = activeSearchQuery;
 
     // Reset to searching state
     useAppStore.getState().setRemoteSearching();
 
     window.api.emails
-      .searchRemote(query, currentAccountId, 500)
+      .searchRemote(query, accountId, 500)
       .then(
         (response: {
           success: boolean;
@@ -301,7 +305,7 @@ function SearchResultsView() {
         if (useAppStore.getState().activeSearchQuery !== query) return;
         setRemoteSearchError(err.message || "Gmail search failed");
       });
-  }, [activeSearchQuery, currentAccountId, isOnline, setRemoteSearchResults, setRemoteSearchError]);
+  }, [activeSearchQuery, currentAccountId, accounts, isOnline, setRemoteSearchResults, setRemoteSearchError]);
 
   // Load more results from Gmail when scrolled to bottom
   const loadMoreResults = useCallback(() => {
@@ -310,8 +314,10 @@ function SearchResultsView() {
       activeSearchQuery: query,
       remoteSearchNextPageToken: pageToken,
       remoteSearchLoadingMore: loading,
-      currentAccountId: accountId,
+      currentAccountId: acctId,
+      accounts: accts,
     } = state;
+    const accountId = acctId || accts[0]?.id;
     if (!query || !pageToken || loading || !accountId) return;
     useAppStore.getState().setRemoteSearchLoadingMore(true);
 

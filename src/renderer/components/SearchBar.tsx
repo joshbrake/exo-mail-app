@@ -63,6 +63,7 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
   const {
     setSelectedEmailId,
     currentAccountId,
+    accounts,
     setActiveSearch,
     setViewMode,
     isOnline,
@@ -122,8 +123,11 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
   }, [query, currentAccountId]);
 
   // Perform full Gmail search and show results (local + remote in parallel)
+  // In unified view (currentAccountId === null), search all accounts.
   const performFullSearch = useCallback(() => {
-    if (!query.trim() || !currentAccountId) return;
+    if (!query.trim()) return;
+    const accountIds = currentAccountId ? [currentAccountId] : accounts.map((a) => a.id);
+    if (accountIds.length === 0) return;
 
     // Special handling for "in:draft" / "in:drafts" — switch to drafts view instead of searching
     const trimmed = query.trim().toLowerCase();
@@ -139,23 +143,31 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
     // setActiveSearch closes the modal, sets remoteSearchStatus: 'searching'.
     setActiveSearch(query, []);
 
-    // Fire local search — results stream into the store when ready
-    window.api.emails
-      .search(query, currentAccountId, 500)
-      .then((localResponse: IpcResponse<DashboardEmail[]>) => {
-        if (useAppStore.getState().activeSearchQuery !== query) return;
-        if (localResponse.success && localResponse.data) {
-          useAppStore.getState().setActiveSearchResults(localResponse.data);
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("Local search failed:", error);
-      });
+    // Fire local search for each account — results stream into the store when ready
+    for (const accountId of accountIds) {
+      window.api.emails
+        .search(query, accountId, 500)
+        .then((localResponse: IpcResponse<DashboardEmail[]>) => {
+          if (useAppStore.getState().activeSearchQuery !== query) return;
+          if (localResponse.success && localResponse.data) {
+            const prev = useAppStore.getState().activeSearchResults;
+            // Merge and deduplicate by ID
+            const existing = new Set(prev.map((e) => e.id));
+            const newEmails = localResponse.data.filter((e) => !existing.has(e.id));
+            if (newEmails.length > 0) {
+              useAppStore.getState().setActiveSearchResults([...prev, ...newEmails]);
+            }
+          }
+        })
+        .catch((error: unknown) => {
+          console.error("Local search failed:", error);
+        });
+    }
 
-    // Fire remote search (slow) — results stream into the store when ready
+    // Fire remote search (slow) — use first account for remote (Gmail API is per-account)
     if (isOnline) {
       window.api.emails
-        .searchRemote(query, currentAccountId, 500)
+        .searchRemote(query, accountIds[0], 500)
         .then(
           (response: {
             success: boolean;
@@ -183,6 +195,7 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
   }, [
     query,
     currentAccountId,
+    accounts,
     isOnline,
     setActiveSearch,
     setRemoteSearchResults,
