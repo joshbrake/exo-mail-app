@@ -6,10 +6,22 @@ import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
 import { PluginKey } from "@tiptap/pm/state";
 import tippy, { type Instance as TippyInstance } from "tippy.js";
 import type { EditorView } from "@tiptap/pm/view";
+import { Fragment, Slice } from "@tiptap/pm/model";
 
 // Extract Editor type from useEditor return type
 type Editor = NonNullable<ReturnType<typeof useEditor>>;
 import StarterKit from "@tiptap/starter-kit";
+
+// Make Enter insert a <br> (hard break) instead of creating a new <p>.
+// This gives email-style single-spacing: blank lines require pressing Enter twice.
+const EnterHardBreak = Extension.create({
+  name: "enterHardBreak",
+  addKeyboardShortcuts() {
+    return {
+      Enter: ({ editor }) => editor.commands.setHardBreak(),
+    };
+  },
+});
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -229,8 +241,21 @@ const SnippetMention = Extension.create<SnippetMentionOptions>({
             .replace(/<br\s*\/?>\s*<\/div>/gi, "</div>")
             .replace(/<div>\s*<\/div>/gi, "<p></p>");
         } else {
-          // Plain text: escape HTML chars and convert newlines to <br>
-          content = escapeHtml(resolved).replace(/\n/g, "<br>");
+          // Plain text: insert as TipTap JSON nodes so newlines become
+          // hard breaks (single-spaced) instead of paragraph boundaries.
+          const lines = resolved.split("\n");
+          const nodes: Array<{ type: string; text?: string }> = [];
+          for (let i = 0; i < lines.length; i++) {
+            if (i > 0) nodes.push({ type: "hardBreak" });
+            if (lines[i]) nodes.push({ type: "text", text: lines[i] });
+          }
+          editor
+            .chain()
+            .focus()
+            .deleteRange(range)
+            .insertContent(nodes)
+            .run();
+          return;
         }
         editor.chain().focus().deleteRange(range).insertContent(content).run();
       },
@@ -752,12 +777,58 @@ export function ComposeEditor({
       SnippetMention.configure({
         contextRef: stableContextRef,
       }),
+      EnterHardBreak,
     ],
     content: initialContent,
     autofocus: autoFocus ? "end" : false,
     editorProps: {
       attributes: {
         class: "prose prose-sm max-w-none focus:outline-none min-h-[100px] p-3",
+      },
+      handleDOMEvents: {
+        // Intercept macOS text replacement (System Preferences → Keyboard →
+        // Text Replacements). Without this, newlines in the replacement text
+        // create separate <p> tags with paragraph spacing instead of <br>.
+        beforeinput: (view, event) => {
+          // Intercept multiline text insertion (macOS text replacements,
+          // dictation, etc.) so newlines become <br> not new paragraphs.
+          const text =
+            event.dataTransfer?.getData("text/plain") ?? event.data;
+          if (text && text.includes("\n")) {
+            event.preventDefault();
+            const { schema, doc } = view.state;
+
+            // getTargetRanges() returns the DOM range macOS wants to replace
+            // (includes the trigger text, e.g. "bj"). Map it to ProseMirror
+            // positions so the trigger text gets deleted.
+            const targetRanges = event.getTargetRanges();
+            let from: number, to: number;
+            if (targetRanges.length > 0) {
+              const range = targetRanges[0];
+              from = view.posAtDOM(range.startContainer, range.startOffset);
+              to = view.posAtDOM(range.endContainer, range.endOffset);
+            } else {
+              from = view.state.selection.from;
+              to = view.state.selection.to;
+            }
+
+            const pmNodes: ReturnType<typeof schema.text>[] = [];
+            const lines = text.split("\n");
+            for (let i = 0; i < lines.length; i++) {
+              if (i > 0) pmNodes.push(schema.nodes.hardBreak.create());
+              if (lines[i]) pmNodes.push(schema.text(lines[i]));
+            }
+            view.dispatch(
+              view.state.tr.replaceWith(
+                from,
+                to,
+                Fragment.from(pmNodes),
+              ),
+            );
+            return true;
+          }
+          return false;
+        },
       },
       handleKeyDown: (_view: EditorView, event: KeyboardEvent) => {
         if (event.key === "Tab" && event.shiftKey) {

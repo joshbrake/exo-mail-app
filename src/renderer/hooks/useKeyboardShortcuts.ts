@@ -40,12 +40,17 @@ function isInputFocused(): boolean {
   const active = document.activeElement;
   if (!active) return false;
   const tagName = active.tagName.toLowerCase();
-  return (
+  const isInput =
     tagName === "input" ||
     tagName === "textarea" ||
     active.getAttribute("contenteditable") === "true" ||
-    active.classList.contains("ProseMirror")
-  );
+    active.classList.contains("ProseMirror");
+  if (!isInput) return false;
+  // Ensure the element is actually visible — an off-screen or hidden
+  // contenteditable (e.g. inline reply in a collapsed detail view)
+  // should not block keyboard shortcuts.
+  const rect = active.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
 }
 
 // Read current keyboard mode directly from store (no closure dependency)
@@ -968,7 +973,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
         // Shift+I: mark as read and return to list (Gmail only)
         case "I":
           if (isGmail && e.shiftKey) {
-            if (selectedThreadId && currentAccountId) {
+            if (selectedThreadId) {
               e.preventDefault();
               markThreadAsRead(selectedThreadId);
               if (viewMode === "full") {
@@ -983,13 +988,15 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
           if (isMultiSelect) {
             e.preventDefault();
             batchToggleStar();
-          } else if (isGmail && selectedThreadId && currentAccountId) {
+          } else if (isGmail && selectedThreadId) {
             e.preventDefault();
             const threadEmails = emails.filter((item) => item.threadId === selectedThreadId);
             if (threadEmails.length === 0) break;
             const latestEmail = threadEmails.reduce((a, b) =>
               new Date(a.date).getTime() >= new Date(b.date).getTime() ? a : b,
             );
+            const threadAccountId = latestEmail.accountId;
+            if (!threadAccountId) break;
             const currentLabels = latestEmail.labelIds || ["INBOX"];
             const isStarred = currentLabels.includes("STARRED");
             if (isStarred) {
@@ -1009,7 +1016,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
                 id: `unstar-${selectedThreadId}-${Date.now()}`,
                 type: "unstar",
                 threadCount: 1,
-                accountId: currentAccountId,
+                accountId: threadAccountId,
                 emails: starredEmails,
                 scheduledAt: Date.now(),
                 delayMs: 5000,
@@ -1025,7 +1032,7 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
                 id: `star-${selectedThreadId}-${Date.now()}`,
                 type: "star",
                 threadCount: 1,
-                accountId: currentAccountId,
+                accountId: threadAccountId,
                 emails: [latestEmail],
                 scheduledAt: Date.now(),
                 delayMs: 5000,
@@ -1091,11 +1098,18 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) 
           }
           break;
 
-        // Shift+N: force refresh/sync current account (Gmail only)
+        // Shift+N: force refresh/sync current account or all accounts (Gmail only)
         case "N":
-          if (isGmail && e.shiftKey && currentAccountId) {
+          if (isGmail && e.shiftKey) {
             e.preventDefault();
-            window.api.sync.now(currentAccountId).catch(console.error);
+            if (currentAccountId) {
+              window.api.sync.now(currentAccountId).catch(console.error);
+            } else {
+              // Unified view: sync all accounts
+              for (const acc of accounts) {
+                window.api.sync.now(acc.id).catch(console.error);
+              }
+            }
           }
           break;
 
