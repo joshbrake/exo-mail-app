@@ -42,11 +42,15 @@ const extension: ExtensionModule = {
     // and calls asana:save-token. The auth banner just signals that auth is needed.
     api.registerAuthHandler(
       async () => {
-        // No-op: PAT entry is handled in the renderer panel
-        api.emitAuthRequired("Enter your Asana Personal Access Token in the Tools sidebar");
+        // No-op: PAT entry is handled inline in the wizard or renderer panel
+        api.emitAuthRequired("Enter your Asana Personal Access Token");
       },
       {
         checkAuth: () => hasValidAsanaToken(context),
+        authMethod: "token",
+        tokenLabel: "Personal Access Token",
+        tokenPlaceholder: "0/abc123...",
+        tokenHelpUrl: "https://app.asana.com/0/my-apps",
       },
     );
 
@@ -92,20 +96,31 @@ const extension: ExtensionModule = {
 
     api.registerIpcHandler("get-linked-tasks", async (params) => {
       const { threadId } = params as { threadId: string };
-      const linked = (await context.storage.get<LinkedTask[]>(`linked:${threadId}`)) ?? [];
+      const key = `linked:${threadId}`;
+      const linked = (await context.storage.get<LinkedTask[]>(key)) ?? [];
       if (linked.length === 0) return { tasks: [] };
       // Fetch current status from Asana for each linked task
-      const tasks = await Promise.all(
+      const results = await Promise.all(
         linked.map(async (lt) => {
           try {
             const task = await asanaClient.getTask(lt.gid);
             return { ...lt, name: task.name, completed: task.completed };
           } catch {
-            // Task may have been deleted — still show it but mark unknown
-            return { ...lt, completed: null };
+            // Task was deleted or is inaccessible — remove it
+            return null;
           }
         }),
       );
+      const tasks = results.filter((t) => t !== null);
+      // Prune deleted tasks from storage so they don't reappear
+      if (tasks.length < linked.length) {
+        const remaining = linked.filter((lt) => tasks.some((t) => t.gid === lt.gid));
+        if (remaining.length === 0) {
+          await context.storage.delete(key);
+        } else {
+          await context.storage.set(key, remaining);
+        }
+      }
       return { tasks };
     });
 

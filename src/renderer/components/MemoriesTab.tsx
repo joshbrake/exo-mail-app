@@ -283,28 +283,31 @@ export function MemoriesTab({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">AI Memories</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Persistent preferences that influence how drafts are generated. Memories are
-              automatically included in AI context when relevant.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
-          >
-            {showAddForm ? "Cancel" : "Add Memory"}
-          </button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            AI Memories
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Persistent preferences that influence how drafts are generated. Memories are
+            automatically included in AI context when relevant.
+          </p>
         </div>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex-shrink-0"
+        >
+          {showAddForm ? "Cancel" : "Add Memory"}
+        </button>
+      </div>
 
-        {error && <p className="text-sm text-red-600 dark:text-red-400 mb-3">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400 mb-3">{error}</p>}
+
+      <div>
 
         {/* Add memory form */}
         {showAddForm && (
-          <div className="p-4 mb-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3">
+          <div className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg space-y-3">
             <div className="flex gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -387,7 +390,8 @@ export function MemoriesTab({
           </div>
         )}
 
-        {/* Filter bar */}
+        {/* Filter bar + memory list */}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
         <div className="flex gap-1 mb-3">
           {(["all", "global", "person", "domain", "category"] as const).map((scope) => (
             <button
@@ -555,10 +559,11 @@ export function MemoriesTab({
             ))}
           </div>
         )}
+        </div>
 
         {/* Draft memories section */}
         {draftMemories.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
             <button
               onClick={() => setShowDraftMemories(!showDraftMemories)}
               className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
@@ -574,13 +579,13 @@ export function MemoriesTab({
               </svg>
               Draft Memories ({draftMemories.length})
             </button>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-5">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               Observations from your edits and priority overrides — promoted to active memories
               after repeated confirmations
             </p>
 
             {showDraftMemories && (
-              <div className="mt-3 space-y-1 ml-5">
+              <div className="mt-3 space-y-1">
                 {draftMemories.map((dm) => (
                   <div
                     key={dm.id}

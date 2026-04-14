@@ -285,16 +285,49 @@ function EmailBodyRenderer({
 
     const iframe = iframeRef.current;
     let attachedDoc: Document | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
     const adjustHeight = () => {
       try {
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (doc && doc.body) {
-          const height = doc.body.scrollHeight;
-          setIframeHeight(height + 20);
+        if (doc) {
+          // Temporarily remove the iframe's fixed height so the document can
+          // expand to its natural size. Without this, scrollHeight returns the
+          // *constrained* height (matching the iframe) instead of the full
+          // content height — the classic iframe auto-sizing chicken-and-egg.
+          const prev = iframe.style.height;
+          iframe.style.height = "0px";
+
+          const bodyScroll = doc.body?.scrollHeight ?? 0;
+          const bodyOffset = doc.body?.offsetHeight ?? 0;
+          const docScroll = doc.documentElement?.scrollHeight ?? 0;
+          const docOffset = doc.documentElement?.offsetHeight ?? 0;
+          const height = Math.max(bodyScroll, bodyOffset, docScroll, docOffset);
+
+          // Restore immediately to avoid visual flicker
+          iframe.style.height = prev;
+
+          if (height > 0) {
+            setIframeHeight(height + 20);
+          }
         }
       } catch {
         // Cross-origin issues - use default height
+      }
+    };
+
+    // Watch the iframe body and documentElement for size changes
+    // (images loading, lazy content, etc.)
+    const observeBody = () => {
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (doc) {
+          resizeObserver = new ResizeObserver(adjustHeight);
+          if (doc.body) resizeObserver.observe(doc.body);
+          if (doc.documentElement) resizeObserver.observe(doc.documentElement);
+        }
+      } catch {
+        // Cross-origin — fall back to timeouts only
       }
     };
 
@@ -343,18 +376,44 @@ function EmailBodyRenderer({
     if (iframe.contentDocument?.readyState === "complete") {
       adjustHeight();
       attachKeyboardForwarding();
+      observeBody();
     }
 
     iframe.onload = () => {
       adjustHeight();
       attachKeyboardForwarding();
+      observeBody();
+      // Fallback timeouts for cases where ResizeObserver misses changes
+      // (e.g. images loading, fonts rendering, complex table layouts)
       setTimeout(adjustHeight, 300);
       setTimeout(adjustHeight, 1000);
+      setTimeout(adjustHeight, 3000);
+
+      // Also listen for individual image load events within the iframe,
+      // since images loading can change the document height without
+      // triggering ResizeObserver on the body.
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (doc) {
+          const images = doc.querySelectorAll("img");
+          images.forEach((img) => {
+            if (!img.complete) {
+              img.addEventListener("load", adjustHeight);
+              img.addEventListener("error", adjustHeight);
+            }
+          });
+        }
+      } catch {
+        // Cross-origin — fallback timeouts will handle it
+      }
     };
 
     return () => {
       if (attachedDoc) {
         attachedDoc.removeEventListener("keydown", iframeKeydownHandler);
+      }
+      if (resizeObserver) {
+        resizeObserver.disconnect();
       }
     };
   }, [iframeSrcDoc, shouldRenderIframe]);
@@ -367,7 +426,8 @@ function EmailBodyRenderer({
         referrerPolicy="no-referrer"
         style={{
           width: "100%",
-          height: iframeHeight > 0 ? `${iframeHeight}px` : "0px",
+          height: iframeHeight > 0 ? `${iframeHeight}px` : "150px",
+          minHeight: "100px",
           border: "none",
           display: "block",
           opacity: iframeHeight > 0 ? 1 : 0,
@@ -880,15 +940,20 @@ function ThreadMessage({
   // Check if this is from current user
   const isFromMe = currentUserEmail && senderEmail.toLowerCase() === currentUserEmail.toLowerCase();
 
-  // Format date
+  // Format date — Apple Mail style with time
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
-      return date.toLocaleDateString(undefined, {
-        month: "numeric",
-        day: "numeric",
-        year: "numeric",
-      });
+      if (isNaN(date.getTime())) return dateStr;
+      const now = new Date();
+      const timeStr = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      if (date.toDateString() === now.toDateString()) return timeStr;
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (date.toDateString() === yesterday.toDateString()) return `Yesterday, ${timeStr}`;
+      const dateOpts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+      if (date.getFullYear() !== now.getFullYear()) dateOpts.year = "numeric";
+      return `${date.toLocaleDateString(undefined, dateOpts)}, ${timeStr}`;
     } catch {
       return dateStr;
     }
@@ -947,7 +1012,7 @@ function ThreadMessage({
     return (
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-4 py-3 px-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left border-b border-gray-100 dark:border-gray-700/50"
+        className="w-full flex items-center gap-4 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left border-b border-gray-100 dark:border-gray-700/50"
       >
         {/* Sender */}
         <div className="w-28 flex-shrink-0">
@@ -986,33 +1051,44 @@ function ThreadMessage({
       {/* Header */}
       <button
         onClick={onToggle}
-        className={`w-full flex items-center gap-2 py-3 px-2 transition-colors text-left ${
+        className={`w-full py-3 px-4 transition-colors text-left relative ${
           useWhiteCard ? "hover:bg-gray-100/50" : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
         }`}
       >
-        <span
-          onClick={handleHeaderClick}
-          className={`min-w-0 truncate text-sm font-medium cursor-pointer ${useWhiteCard ? "text-gray-900" : "text-gray-900 dark:text-gray-100"}`}
-        >
-          {formatMessageHeader(email, currentUserEmail, nameMap)}
-        </span>
-        <svg
-          onClick={handleHeaderClick}
-          className={`flex-shrink-0 w-3 h-3 transition-transform cursor-pointer ${showHeaderDetails ? "rotate-180" : ""} ${useWhiteCard ? "text-gray-400" : "text-gray-400 dark:text-gray-500"}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-        <span
-          className={`flex-shrink-0 ml-auto text-sm ${useWhiteCard ? "text-gray-400" : "text-gray-400 dark:text-gray-500"}`}
-        >
-          {formatDate(email.date)}
-        </span>
+        {/* Line 1: Sender + Date */}
+        <div className="flex items-baseline justify-between">
+          <span
+            className={`text-base font-semibold truncate ${useWhiteCard ? "text-gray-900" : "text-gray-900 dark:text-gray-100"}`}
+          >
+            {isFromMe ? "Me" : senderName}
+          </span>
+          <span
+            className={`flex-shrink-0 ml-4 text-sm ${useWhiteCard ? "text-gray-400" : "text-gray-400 dark:text-gray-500"}`}
+          >
+            {formatDate(email.date)}
+          </span>
+        </div>
+        {/* Line 2: Recipients */}
+        <div className="flex items-center gap-1 mt-0.5">
+          <span
+            className={`text-sm truncate ${useWhiteCard ? "text-gray-500" : "text-gray-500 dark:text-gray-400"}`}
+          >
+            To: {joinNames(parseRecipientFirstNames(email.to, currentUserEmail, nameMap))}
+            {email.cc ? ` Cc: ${joinNames(parseRecipientFirstNames(email.cc, currentUserEmail, nameMap))}` : ""}
+          </span>
+          <svg
+            onClick={handleHeaderClick}
+            className={`flex-shrink-0 w-3 h-3 transition-transform cursor-pointer ${showHeaderDetails ? "rotate-180" : ""} ${useWhiteCard ? "text-gray-400" : "text-gray-400 dark:text-gray-500"}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
         {/* Reply/Forward action buttons - top right, visible on hover */}
         {isExpanded && (
-          <span className="flex-shrink-0 flex items-center gap-0.5 ml-2 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+          <span className={`absolute right-4 top-3 flex items-center gap-0.5 opacity-0 group-hover/msg:opacity-100 transition-opacity rounded pl-2 ${useWhiteCard ? "bg-white" : "bg-white dark:bg-gray-800"}`}>
             <span
               role="button"
               onClick={(e) => {
@@ -1092,7 +1168,7 @@ function ThreadMessage({
       {/* Expandable sender details */}
       {showHeaderDetails && (
         <div
-          className={`mx-2 mt-1 p-2 rounded border text-xs space-y-1 ${
+          className={`mx-4 mt-1 p-2 rounded border text-xs space-y-1 ${
             useWhiteCard
               ? "bg-gray-50 border-gray-200"
               : "bg-gray-100/50 dark:bg-gray-700/40 border-gray-200 dark:border-gray-600"
@@ -1170,7 +1246,7 @@ function ThreadMessage({
       )}
 
       {/* Email body - no inner scroll. Masked in session replays via global maskTextSelector:"*" in posthog.ts. */}
-      <div className="px-2 pb-4" data-ph-no-capture>
+      <div className="px-4 pb-4" data-ph-no-capture>
         {lightBody === null ? (
           <div className="animate-pulse text-gray-400 dark:text-gray-500 text-sm py-4 px-2">
             Loading…
@@ -1734,6 +1810,7 @@ function InlineReply({
       ref={containerRef}
       className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
       data-testid="inline-compose"
+      data-inline-reply
     >
       <div className="px-4 pt-2">
         <div className="flex items-center justify-between mb-1">
@@ -3288,6 +3365,28 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
     }
   }, [isInlineReplyOpen, inlineReplyInfo, handleInlineReplyCancel]);
 
+  // Scroll the inline reply into view when it opens so the compose area is visible
+  useEffect(() => {
+    if (!inlineReplyInfo || !inlineReplyToEmailId || !scrollContainerRef.current) return;
+    // Wait a frame for the InlineReply component to render
+    requestAnimationFrame(() => {
+      const emailEl = scrollContainerRef.current?.querySelector(
+        `[data-email-id="${inlineReplyToEmailId}"]`,
+      );
+      if (!emailEl) return;
+      // The InlineReply renders as a sibling after the email's wrapper div.
+      // Scroll the bottom of the email element into view so the reply compose
+      // area (which follows it) is visible.
+      const replyEl = emailEl.querySelector("[data-inline-reply]") as HTMLElement | null;
+      if (replyEl) {
+        replyEl.scrollIntoView({ behavior: "smooth", block: "end" });
+      } else {
+        // Fallback: scroll the email element's bottom into view
+        emailEl.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    });
+  }, [inlineReplyInfo, inlineReplyToEmailId]);
+
   const handleDiscardDraft = useCallback(() => {
     if (draftEmail) {
       updateEmail(draftEmail.id, { draft: undefined });
@@ -3608,154 +3707,151 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
       )}
 
       {/* Single scroll container for entire thread */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-[200px]">
         {/* Thread header */}
-        <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700/50">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 leading-tight">
-                {cleanSubject}
-              </h1>
-              {threadEmails.length > 1 && (
-                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                  {threadEmails.length} messages
-                </p>
-              )}
+        <div className="px-6 pt-4 pb-3 border-b border-gray-100 dark:border-gray-700/50">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 leading-snug">
+            {cleanSubject}
+          </h1>
+          {threadEmails.length > 1 && (
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
+              {threadEmails.length} messages
+            </p>
+          )}
+          {/* Action toolbar */}
+          <div className="flex items-center mt-2">
+            <div className="flex items-center">
+              <button
+                onClick={handleArchive}
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                title="Archive"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={handleTrash}
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                title="Delete"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={handleMarkUnread}
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                title="Mark as unread"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={handleToggleStar}
+                className={`p-1.5 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                  isStarred
+                    ? "text-yellow-400 hover:text-yellow-500"
+                    : "text-gray-400 dark:text-gray-500 hover:text-yellow-400"
+                }`}
+                title={isStarred ? "Unstar" : "Star"}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill={isStarred ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+                  />
+                </svg>
+              </button>
+              {/* Snooze button */}
+              <button
+                onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
+                className={`p-1.5 rounded transition-colors ${
+                  snoozedThreads.has(latestEmail.threadId)
+                    ? "text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                    : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+                title={snoozedThreads.has(latestEmail.threadId) ? "Snoozed" : "Snooze (h)"}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </button>
             </div>
-            <div className="flex items-center ml-4 flex-shrink-0">
-              <div className="flex items-center">
-                <button
-                  onClick={handleArchive}
-                  className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                  title="Archive"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleTrash}
-                  className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                  title="Delete"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleMarkUnread}
-                  className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                  title="Mark as unread"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleToggleStar}
-                  className={`p-1.5 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                    isStarred
-                      ? "text-yellow-400 hover:text-yellow-500"
-                      : "text-gray-400 dark:text-gray-500 hover:text-yellow-400"
-                  }`}
-                  title={isStarred ? "Unstar" : "Star"}
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill={isStarred ? "currentColor" : "none"}
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
-                    />
-                  </svg>
-                </button>
-                {/* Snooze button */}
-                <button
-                  onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
-                  className={`p-1.5 rounded transition-colors ${
-                    snoozedThreads.has(latestEmail.threadId)
-                      ? "text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                      : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }`}
-                  title={snoozedThreads.has(latestEmail.threadId) ? "Snoozed" : "Snooze (h)"}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-              <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-1" />
-              <div className="flex items-center">
-                <button
-                  onClick={() =>
-                    openCompose(
-                      "reply-all",
-                      focusedThreadEmailId ?? replyTargetEmailId ?? latestEmail.id,
-                    )
-                  }
-                  className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                  title="Reply All"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M7 10h8a8 8 0 018 8v2M7 10l6 6m-6-6l6-6"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M3 14l4-4-4-4"
-                    />
-                  </svg>
-                </button>
-                <button
-                  onClick={() =>
-                    openCompose(
-                      "forward",
-                      focusedThreadEmailId ?? replyTargetEmailId ?? latestEmail.id,
-                    )
-                  }
-                  className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                  title="Forward"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M14 5l7 7m0 0l-7 7m7-7H3"
-                    />
-                  </svg>
-                </button>
-              </div>
+            <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-1" />
+            <div className="flex items-center">
+              <button
+                onClick={() =>
+                  openCompose(
+                    "reply-all",
+                    focusedThreadEmailId ?? replyTargetEmailId ?? latestEmail.id,
+                  )
+                }
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                title="Reply All"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M7 10h8a8 8 0 018 8v2M7 10l6 6m-6-6l6-6"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M3 14l4-4-4-4"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() =>
+                  openCompose(
+                    "forward",
+                    focusedThreadEmailId ?? replyTargetEmailId ?? latestEmail.id,
+                  )
+                }
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                title="Forward"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -3798,8 +3894,8 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
             ) : null;
           })()}
 
-        {/* Action buttons (Track Package, Unsubscribe) */}
-        {(trackingNumbers.length > 0 || unsubscribeUrl) && (
+        {/* Track Package pills */}
+        {trackingNumbers.length > 0 && (
           <div className="px-6 py-2.5 border-b border-gray-100 dark:border-gray-700/50 flex items-center gap-2 flex-wrap">
             {trackingNumbers.map((t, i) => (
               <button
@@ -3819,28 +3915,31 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
                 Track {t.carrier} Package
               </button>
             ))}
-            {unsubscribeUrl && (
-              <button
-                onClick={() => window.open(unsubscribeUrl!, "_blank")}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
-                title="Unsubscribe from this mailing list"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                  />
-                </svg>
-                Unsubscribe
-              </button>
-            )}
           </div>
         )}
 
         {/* Thread messages - single scroll, no nested scrolls */}
         <div className="px-6">
+          {/* Unsubscribe banner */}
+          {unsubscribeUrl && (
+            <div className="flex items-center gap-2 py-2 px-4 mt-2 mb-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/40 rounded-md">
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                />
+              </svg>
+              <span>This message is from a mailing list.</span>
+              <button
+                onClick={() => window.open(unsubscribeUrl!, "_blank")}
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Unsubscribe
+              </button>
+            </div>
+          )}
           {threadEmails.map((email) => (
             <div key={email.id} data-email-id={email.id}>
               <ThreadMessage

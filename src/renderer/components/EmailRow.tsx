@@ -1,6 +1,7 @@
-import { memo } from "react";
+import { memo, useState, useRef, useEffect, useCallback } from "react";
 import type { InboxDensity, SnoozedEmail } from "../../shared/types";
 import type { EmailThread } from "../store";
+import { useAppStore } from "../store";
 import { formatSnoozeTime } from "./SnoozeMenu";
 
 interface EmailRowProps {
@@ -23,7 +24,7 @@ const densityStyles = {
     row: "h-10 px-4 gap-2 text-sm",
     senderWidth: "w-32",
     priorityBadge: "text-[10px] px-1.5 py-0.5",
-    time: "w-10 text-xs",
+    time: "w-28 text-xs",
     threadBadge: "text-[10px] w-5 h-5",
     unreadDot: "w-1.5 h-1.5",
   },
@@ -31,7 +32,7 @@ const densityStyles = {
     row: "h-8 px-3 gap-1.5 text-xs",
     senderWidth: "w-28",
     priorityBadge: "text-[9px] px-1 py-px",
-    time: "w-9 text-[10px]",
+    time: "w-24 text-[10px]",
     threadBadge: "text-[9px] w-4 h-4",
     unreadDot: "w-1.5 h-1.5",
   },
@@ -50,7 +51,8 @@ function formatRelativeDate(dateStr: string): string {
   if (diffMins < 60) return `${diffMins}m`;
   if (diffHours < 24) return `${diffHours}h`;
   if (diffDays < 7) return `${diffDays}d`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+    ", " + date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
 function formatSnoozeCountdown(snoozeUntil: number): string {
@@ -112,6 +114,111 @@ function getPriorityLabel(thread: EmailThread): { text: string; className: strin
   };
 }
 
+const PRIORITY_OPTIONS = [
+  { value: "skip", label: "Skip", needsReply: false, priority: null as string | null },
+  { value: "low", label: "Low", needsReply: true, priority: "low" },
+  { value: "medium", label: "Medium", needsReply: true, priority: "medium" },
+  { value: "high", label: "High", needsReply: true, priority: "high" },
+] as const;
+
+const PRIORITY_COLORS: Record<string, string> = {
+  skip: "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400",
+  low: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
+  medium: "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300",
+  high: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
+};
+
+function PriorityDropdown({
+  thread,
+  currentValue,
+  onClose,
+  anchorRef,
+}: {
+  thread: EmailThread;
+  currentValue: string;
+  onClose: () => void;
+  anchorRef: React.RefObject<HTMLElement | null>;
+}) {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const updateEmail = useAppStore((s) => s.updateEmail);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        anchorRef.current &&
+        !anchorRef.current.contains(e.target as Node)
+      ) {
+        onClose();
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [onClose, anchorRef]);
+
+  const handleSelect = async (opt: (typeof PRIORITY_OPTIONS)[number]) => {
+    if (opt.value === currentValue) {
+      onClose();
+      return;
+    }
+    const emailId = thread.latestReceivedEmail.id;
+    try {
+      await window.api.analysis.overridePriority(emailId, opt.needsReply, opt.priority);
+      updateEmail(emailId, {
+        analysis: {
+          ...thread.latestReceivedEmail.analysis!,
+          needsReply: opt.needsReply,
+          priority: (opt.priority as "high" | "medium" | "low" | null) ?? undefined,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to override priority:", err);
+    }
+    onClose();
+  };
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="absolute z-50 mt-1 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 min-w-[100px]"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {PRIORITY_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSelect(opt);
+          }}
+          className={`w-full px-3 py-1.5 text-xs text-left flex items-center gap-2 transition-colors
+            ${opt.value === currentValue ? "bg-gray-100 dark:bg-gray-700" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"}`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              opt.value === "high"
+                ? "bg-red-500"
+                : opt.value === "medium"
+                  ? "bg-yellow-500"
+                  : opt.value === "low"
+                    ? "bg-blue-500"
+                    : "bg-gray-400"
+            }`}
+          />
+          <span className="text-gray-700 dark:text-gray-200">{opt.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // Memoized so that j/k navigation only re-renders the two rows whose
 // isSelected changed, not every row in the list.  The custom comparator
 // skips onClick/onCheckboxChange (always new arrow functions from the parent).
@@ -138,6 +245,10 @@ export const EmailRow = memo(
     const priorityLabel = getPriorityLabel(thread);
     // Fallback to "default" if stored density is unrecognized (e.g. removed "comfortable")
     const ds = densityStyles[density] ?? densityStyles.default;
+
+    const [showPriorityMenu, setShowPriorityMenu] = useState(false);
+    const priorityBadgeRef = useRef<HTMLSpanElement>(null);
+    const closePriorityMenu = useCallback(() => setShowPriorityMenu(false), []);
 
     const isUnread = thread.isUnread;
     const isRecentlyUnsnoozed = returnTime !== undefined;
@@ -228,15 +339,34 @@ export const EmailRow = memo(
             {senderName}
           </span>
 
-          {/* Priority label */}
+          {/* Priority label — clickable to change */}
           {priorityLabel && (
-            <span
-              className={`
-          ${ds.priorityBadge} rounded flex-shrink-0 uppercase font-medium w-14 text-center
-          ${isSelected && !isChecked ? "bg-white/20 text-white" : priorityLabel.className}
-        `}
-            >
-              {priorityLabel.text}
+            <span className="relative flex-shrink-0">
+              <span
+                ref={priorityBadgeRef}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (thread.analysis) setShowPriorityMenu((v) => !v);
+                }}
+                className={`
+            ${ds.priorityBadge} rounded uppercase font-medium w-14 text-center cursor-pointer inline-block
+            ${isSelected && !isChecked ? "bg-white/20 text-white" : priorityLabel.className}
+          `}
+              >
+                {priorityLabel.text}
+              </span>
+              {showPriorityMenu && thread.analysis && (
+                <PriorityDropdown
+                  thread={thread}
+                  currentValue={
+                    !thread.analysis.needsReply || thread.userReplied
+                      ? "skip"
+                      : (thread.analysis.priority || "medium")
+                  }
+                  onClose={closePriorityMenu}
+                  anchorRef={priorityBadgeRef}
+                />
+              )}
             </span>
           )}
 
@@ -321,7 +451,7 @@ export const EmailRow = memo(
 
           {/* Time */}
           <span
-            className={`${ds.time} text-right flex-shrink-0 tabular-nums ${
+            className={`${ds.time} text-right flex-shrink-0 tabular-nums whitespace-nowrap ${
               isSelected && !isChecked
                 ? "text-white/60"
                 : snoozeInfo

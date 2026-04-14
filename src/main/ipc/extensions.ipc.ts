@@ -150,6 +150,10 @@ export function registerExtensionsIpc(): void {
             displayName: string;
             needsAuth: boolean;
             authType: "extension" | "agent";
+            authMethod?: "token" | "interactive";
+            tokenLabel?: string;
+            tokenPlaceholder?: string;
+            tokenHelpUrl?: string;
           }>;
         }
       | { success: false; error: string }

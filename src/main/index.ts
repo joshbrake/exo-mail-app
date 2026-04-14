@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session, nativeTheme } from "electron";
+import { app, BrowserWindow, ipcMain, session, nativeTheme, Menu } from "electron";
 import { join } from "path";
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { electronApp, optimizer } from "@electron-toolkit/utils";
@@ -447,6 +447,46 @@ app.whenReady().then(async () => {
   // NOTE: outbox processing on "online" is handled by sync.ipc.ts
   // after account reconnection completes, to avoid racing against client init.
   // Startup outbox processing is also deferred to sync:init completing.
+
+  // Custom application menu — removes Electron's default View menu which
+  // intercepts Cmd+0, Cmd+= etc. before they reach the renderer.
+  // Keeps essential Edit accelerators (copy/paste/undo) and app controls.
+  const menuTemplate: Electron.MenuItemConstructorOptions[] = [
+    ...(process.platform === "darwin"
+      ? [
+          {
+            label: app.getName(),
+            submenu: [
+              { role: "about" as const },
+              { type: "separator" as const },
+              { role: "hide" as const },
+              { role: "hideOthers" as const },
+              { role: "unhide" as const },
+              { type: "separator" as const },
+              { role: "quit" as const },
+            ],
+          },
+        ]
+      : []),
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "pasteAndMatchStyle" },
+        { role: "selectAll" },
+      ],
+    },
+    {
+      label: "Window",
+      submenu: [{ role: "minimize" }, { role: "close" }],
+    },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production

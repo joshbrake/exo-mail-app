@@ -1,18 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
 import type { IpcResponse } from "../../shared/types";
+import { DEFAULT_ANALYSIS_PROMPT, DEFAULT_DRAFT_PROMPT } from "../../shared/types";
 import { reconfigurePostHog } from "../services/posthog";
 
 interface SetupWizardProps {
   onComplete: () => void;
 }
 
-type Step = "loading" | "credentials" | "apikey" | "oauth" | "extensions" | "analytics";
+type Step = "loading" | "credentials" | "apikey" | "oauth" | "extensions" | "prompts" | "analytics";
 
 interface ExtensionAuthInfo {
   extensionId: string;
   displayName: string;
   needsAuth: boolean;
   authType: "extension" | "agent";
+  authMethod?: "token" | "interactive";
+  tokenLabel?: string;
+  tokenPlaceholder?: string;
+  tokenHelpUrl?: string;
 }
 
 export function SetupWizard({ onComplete }: SetupWizardProps) {
@@ -34,6 +39,13 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
   const [extensionAuths, setExtensionAuths] = useState<ExtensionAuthInfo[]>([]);
   const [authenticatingExtension, setAuthenticatingExtension] = useState<string | null>(null);
 
+  // Token input for PAT-based extensions (extensionId -> token value)
+  const [tokenInputs, setTokenInputs] = useState<Record<string, string>>({});
+
+  // Prompt customization
+  const [analysisPrompt, setAnalysisPrompt] = useState(DEFAULT_ANALYSIS_PROMPT);
+  const [draftPrompt, setDraftPrompt] = useState(DEFAULT_DRAFT_PROMPT);
+
   // Analytics opt-in (default ON — session replay is bundled under analytics)
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
 
@@ -53,6 +65,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
           if (!hasAnthropicKey) flow.push("apikey");
           if (!hasTokens) flow.push("oauth");
           flow.push("extensions");
+          flow.push("prompts");
           flow.push("analytics");
           setVisibleSteps(flow);
 
@@ -66,12 +79,12 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
             enterExtensionsStep();
           }
         } else {
-          setVisibleSteps(["credentials", "apikey", "oauth", "extensions", "analytics"]);
+          setVisibleSteps(["credentials", "apikey", "oauth", "extensions", "prompts", "analytics"]);
           setStep("credentials");
         }
       })
       .catch(() => {
-        setVisibleSteps(["credentials", "apikey", "oauth", "extensions", "analytics"]);
+        setVisibleSteps(["credentials", "apikey", "oauth", "extensions", "prompts", "analytics"]);
         setStep("credentials");
       });
   }, []);
@@ -197,7 +210,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
         }
         setVisibleSteps((prev) => prev.filter((s) => s !== "extensions"));
         setIsLoading(false);
-        setStep("analytics");
+        setStep("prompts");
       }
     } catch (err) {
       console.error("[SetupWizard] getPendingAuths failed:", err);
@@ -242,6 +255,42 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
+    } finally {
+      setAuthenticatingExtension(null);
+    }
+  };
+
+  const handleTokenSave = async (extensionId: string) => {
+    const token = tokenInputs[extensionId]?.trim();
+    if (!token) {
+      setError("Please enter a token");
+      return;
+    }
+
+    setAuthenticatingExtension(extensionId);
+    setError(null);
+
+    try {
+      const result = (await window.api.extensions.invoke(
+        extensionId,
+        "save-token",
+        { token },
+      )) as IpcResponse<{ success: boolean }>;
+
+      if (result.success) {
+        setExtensionAuths((prev) =>
+          prev.map((ext) => (ext.extensionId === extensionId ? { ...ext, needsAuth: false } : ext)),
+        );
+        setTokenInputs((prev) => {
+          const next = { ...prev };
+          delete next[extensionId];
+          return next;
+        });
+      } else {
+        setError(result.error ?? "Failed to save token");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save token");
     } finally {
       setAuthenticatingExtension(null);
     }
@@ -468,39 +517,96 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 {extensionAuths.map((ext) => (
                   <div
                     key={ext.extensionId}
-                    className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
+                    className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
                   >
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {ext.displayName}
-                    </span>
-                    {ext.needsAuth ? (
-                      <button
-                        onClick={() => handleExtensionAuth(ext.extensionId, ext.authType)}
-                        disabled={authenticatingExtension !== null}
-                        className="px-4 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
-                      >
-                        {authenticatingExtension === ext.extensionId ? (
-                          <span className="flex items-center gap-2">
-                            <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Connecting...
-                          </span>
-                        ) : (
-                          "Login"
-                        )}
-                      </button>
-                    ) : (
-                      <span className="text-green-600 dark:text-green-400 flex items-center gap-1.5">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Connected
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {ext.displayName}
                       </span>
+                      {!ext.needsAuth && (
+                        <span className="text-green-600 dark:text-green-400 flex items-center gap-1.5">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          Connected
+                        </span>
+                      )}
+                      {ext.needsAuth && ext.authMethod !== "token" && (
+                        <button
+                          onClick={() => handleExtensionAuth(ext.extensionId, ext.authType)}
+                          disabled={authenticatingExtension !== null}
+                          className="px-4 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                        >
+                          {authenticatingExtension === ext.extensionId ? (
+                            <span className="flex items-center gap-2">
+                              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              Connecting...
+                            </span>
+                          ) : (
+                            "Login"
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {ext.needsAuth && ext.authMethod === "token" && (
+                      <div className="mt-3 space-y-2">
+                        <label className="block text-sm text-gray-600 dark:text-gray-400">
+                          {ext.tokenLabel || "Access Token"}
+                          {ext.tokenHelpUrl && (
+                            <>
+                              {" — "}
+                              <a
+                                href={ext.tokenHelpUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 underline hover:no-underline"
+                              >
+                                Get one here
+                              </a>
+                            </>
+                          )}
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="password"
+                            value={tokenInputs[ext.extensionId] || ""}
+                            onChange={(e) =>
+                              setTokenInputs((prev) => ({
+                                ...prev,
+                                [ext.extensionId]: e.target.value,
+                              }))
+                            }
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && handleTokenSave(ext.extensionId)
+                            }
+                            placeholder={ext.tokenPlaceholder || "Paste your token"}
+                            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                          <button
+                            onClick={() => handleTokenSave(ext.extensionId)}
+                            disabled={
+                              authenticatingExtension !== null ||
+                              !tokenInputs[ext.extensionId]?.trim()
+                            }
+                            className="px-4 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                          >
+                            {authenticatingExtension === ext.extensionId ? (
+                              <span className="flex items-center gap-2">
+                                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Saving...
+                              </span>
+                            ) : (
+                              "Save"
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -513,11 +619,88 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
               )}
 
               <button
-                onClick={() => setStep("analytics")}
+                onClick={() => setStep("prompts")}
                 disabled={authenticatingExtension !== null}
                 className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
               >
                 Continue
+              </button>
+            </>
+          )}
+
+          {step === "prompts" && (
+            <>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Customize AI Prompts
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                These prompts control how Exo analyzes your emails and drafts replies. The defaults
+                work well out of the box — customize them to match your preferences and communication
+                style. You can always change these later in Settings.
+              </p>
+
+              <div className="space-y-5 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Analysis Prompt
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                    Determines which emails need a reply and their priority level.
+                  </p>
+                  <textarea
+                    value={analysisPrompt}
+                    onChange={(e) => setAnalysisPrompt(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Draft Prompt
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                    Controls the tone and style of AI-generated reply drafts. Describe how you write
+                    emails — formal vs. casual, brief vs. detailed, any phrases or habits you prefer.
+                  </p>
+                  <textarea
+                    value={draftPrompt}
+                    onChange={(e) => setDraftPrompt(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y font-mono"
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg mb-4">
+                  <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+                </div>
+              )}
+
+              <button
+                onClick={async () => {
+                  setIsLoading(true);
+                  setError(null);
+                  try {
+                    const result = (await window.api.settings.setPrompts({
+                      analysisPrompt,
+                      draftPrompt,
+                    })) as IpcResponse<unknown>;
+                    if (!result.success) {
+                      setError(result.error ?? "Failed to save prompts");
+                      return;
+                    }
+                    setStep("analytics");
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to save prompts");
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={isLoading}
+                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+              >
+                {isLoading ? "Saving..." : "Continue"}
               </button>
             </>
           )}

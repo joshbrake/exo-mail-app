@@ -51,16 +51,13 @@ Respond ONLY with valid JSON matching this schema:
   ]
 }`;
 
-const DEFAULT_SYSTEM_PROMPT = `You are an executive assistant analyzing emails to identify actionable tasks.
-Your job is to extract 0-3 concrete, actionable tasks from the email that the recipient should track in their task management system (Asana).
+const DEFAULT_SYSTEM_PROMPT = `Analyze the email thread and generate a set of tasks for the recipient based on the contents. Assign due dates where relevant. Include links to content in the task description wherever possible and include any relevant context from the emails so that the task contains all the context needed to complete the task.
 
 Rules:
-- Only suggest tasks that require concrete action from the email recipient
-- Do NOT suggest tasks for: newsletters, marketing emails, automated notifications, receipts, or purely informational messages
-- Each task should be specific and actionable, not vague
 - Task titles should be concise imperative phrases (e.g., "Review Q3 budget proposal", "Schedule meeting with design team")
-- Task descriptions should include relevant context from the email (key details, deadlines mentioned, people involved)
-- Only suggest a due date if the email explicitly mentions a deadline or timeline. Use YYYY-MM-DD format.
+- Task descriptions should be comprehensive — include key details, deadlines, people involved, and any links or references from the email so the task is self-contained
+- Suggest a due date (YYYY-MM-DD format) when the email mentions a deadline, timeline, or when urgency is implied. Use null if no date is relevant.
+- Do NOT suggest tasks for: newsletters, marketing emails, automated notifications, receipts, or purely informational messages
 - If the user provides additional context, use it to guide your task extraction
 - Return an empty tasks array if there are no actionable items`;
 
@@ -95,7 +92,10 @@ ${input.body}`;
     userMessage += `\n\nAdditional context from user:\n${input.userContext}`;
   }
 
-  const systemPrompt = (customSystemPrompt || DEFAULT_SYSTEM_PROMPT) + JSON_SCHEMA_SUFFIX;
+  const basePrompt = customSystemPrompt
+    ? `${DEFAULT_SYSTEM_PROMPT}\n\nAdditional instructions:\n${customSystemPrompt}`
+    : DEFAULT_SYSTEM_PROMPT;
+  const systemPrompt = basePrompt + JSON_SCHEMA_SUFFIX;
 
   const response = await api.ai.createMessage({
     model: "claude-haiku-4-5-20251001",
