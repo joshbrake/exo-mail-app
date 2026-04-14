@@ -75,12 +75,14 @@ function formatSearchDate(dateStr: string): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMs < 0) return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const absDate = date.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+    ", " + date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (diffMs < 0) return absDate;
   if (diffMins < 1) return "now";
   if (diffMins < 60) return `${diffMins}m`;
   if (diffHours < 24) return `${diffHours}h`;
   if (diffDays < 7) return `${diffDays}d`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return absDate;
 }
 
 function SearchResultThreadRow({

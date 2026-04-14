@@ -291,7 +291,17 @@ export interface ExtensionAPI {
    */
   registerAuthHandler(
     handler: () => Promise<void>,
-    options?: { checkAuth?: () => Promise<boolean> },
+    options?: {
+      checkAuth?: () => Promise<boolean>;
+      /** If "token", the onboarding wizard shows an inline token input instead of calling the handler */
+      authMethod?: "token" | "interactive";
+      /** Label shown above the token input (e.g., "Personal Access Token") */
+      tokenLabel?: string;
+      /** Placeholder for the token input */
+      tokenPlaceholder?: string;
+      /** Help URL for obtaining the token */
+      tokenHelpUrl?: string;
+    },
   ): void;
 
   /**

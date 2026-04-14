@@ -92,7 +92,7 @@ export function ScheduleSendButton({ onSchedule, disabled, className }: Schedule
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full mb-2 right-0 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+        <div className="absolute bottom-full mb-2 left-0 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
           {!showCustom ? (
             <>
               <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">

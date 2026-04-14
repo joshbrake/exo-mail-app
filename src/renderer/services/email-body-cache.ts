@@ -100,7 +100,7 @@ export function stripLargeDataUris(body: string, useLightMode = true): string {
 }
 
 const SANITIZE_CONFIG = {
-  WHOLE_DOCUMENT: false,
+  WHOLE_DOCUMENT: true,
   ALLOWED_TAGS: [
     "p",
     "br",
@@ -112,6 +112,13 @@ const SANITIZE_CONFIG = {
     "i",
     "em",
     "u",
+    "s",
+    "small",
+    "sup",
+    "sub",
+    "del",
+    "ins",
+    "mark",
     "h1",
     "h2",
     "h3",
@@ -121,6 +128,9 @@ const SANITIZE_CONFIG = {
     "ul",
     "ol",
     "li",
+    "dl",
+    "dt",
+    "dd",
     "table",
     "tr",
     "td",
@@ -128,7 +138,12 @@ const SANITIZE_CONFIG = {
     "thead",
     "tbody",
     "tfoot",
+    "caption",
+    "col",
+    "colgroup",
     "img",
+    "figure",
+    "figcaption",
     "blockquote",
     "pre",
     "code",
@@ -142,6 +157,9 @@ const SANITIZE_CONFIG = {
     "nav",
     "aside",
     "style",
+    "html",
+    "head",
+    "body",
   ],
   ALLOWED_ATTR: [
     "href",
@@ -157,6 +175,8 @@ const SANITIZE_CONFIG = {
     "border",
     "cellpadding",
     "cellspacing",
+    "colspan",
+    "rowspan",
     "align",
     "valign",
     "bgcolor",
@@ -164,23 +184,54 @@ const SANITIZE_CONFIG = {
     "face",
     "size",
     "type",
+    "dir",
+    "role",
+    "span",
   ],
   ALLOW_DATA_ATTR: false,
   ADD_ATTR: ["target"],
   ALLOWED_URI_REGEXP: /^(?:(?:https?|data|cid):)/i,
 };
 
+/**
+ * Extract <style> tags and body content from a WHOLE_DOCUMENT sanitized output.
+ * DOMPurify with WHOLE_DOCUMENT: true returns `<html><head>...</head><body>...</body></html>`.
+ * We pull out any <style> blocks and the body innerHTML to merge into our iframe template.
+ */
+function extractFromSanitizedDoc(sanitizedHtml: string): {
+  styles: string;
+  bodyContent: string;
+} {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(sanitizedHtml, "text/html");
+
+  // Collect all <style> tags (from both head and body)
+  const styleTags = doc.querySelectorAll("style");
+  const styles = Array.from(styleTags)
+    .map((s) => s.outerHTML)
+    .join("\n");
+
+  // Remove style tags from body before extracting body content
+  doc.body.querySelectorAll("style").forEach((s) => s.remove());
+
+  return { styles, bodyContent: doc.body.innerHTML };
+}
+
 function buildIframeHtml(
-  sanitizedBody: string,
+  sanitizedDoc: string,
   useLightMode: boolean,
   needsPreLine: boolean,
 ): string {
+  const { styles: emailStyles, bodyContent } = extractFromSanitizedDoc(sanitizedDoc);
+
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <base target="_blank">
+  ${emailStyles}
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -223,7 +274,7 @@ function buildIframeHtml(
     }
   </style>
 </head>
-<body><div class="email-wrapper">${sanitizedBody}</div></body>
+<body><div class="email-wrapper">${bodyContent}</div></body>
 </html>`;
 }
 

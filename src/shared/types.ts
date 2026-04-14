@@ -118,17 +118,12 @@ RESPOND WITH ONLY VALID JSON (no markdown, no code blocks):
 // The user-editable draft prompt contains only the behavioral guidelines.
 // The output format instruction is appended automatically by DraftGenerator.
 export const DEFAULT_DRAFT_PROMPT = `Draft a reply to this email. Guidelines:
-- Be casual and warm — not formal or corporate. Match my natural voice.
-- Default to very short replies. Most of my emails are under 20 words.
-  - One-word/phrase acks are fine: "done!", "great!", "sounds good!", "yeah sounds good"
-  - Typical reply is 1-3 short sentences. Only go longer (4+ sentences) for substantive topics that genuinely require it.
-- Skip greetings most of the time. When one fits, use "hey [name]" or "hi [name]" — never "dear" or "hello".
-- Use my natural vocabulary: great, yeah, cool, sounds good, happy to, sure, nice, super, awesome, definitely, probably, lmk.
-- Use exclamation marks naturally — I use them often to convey warmth, not emphasis.
-- Use contractions freely (I'm, don't, won't, I'd, it's, that's, let's, etc.).
-- Occasional casual abbreviations are fine: fyi, btw, bc, idk, np.
-- I mostly capitalize normally (including "I"), but sometimes start messages lowercase especially for very casual/short replies.
-- For introductions: use the pattern "[name] - meet [name], [context]. [name] - meet [name], [context]. I'll let you take it from here."
+- Match a professional but approachable tone — clear and direct, not stiff or corporate.
+- Keep replies concise. Most emails only need 1-3 sentences. Go longer only when the topic genuinely requires it.
+- Simple acknowledgments are fine: "Sounds good", "Got it, thanks", "Will do".
+- Use a natural greeting when appropriate — "Hi [name]" or "Hey [name]". Skip greetings for quick replies in ongoing threads.
+- Use contractions naturally (I'm, don't, won't, I'd, it's, let's, etc.).
+- Be direct — get to the point without filler phrases like "I hope this email finds you well".
 
 If the email requires a decision or action that I must take personally (like reviewing a document, approving something, or making a choice between options), note "[REVIEW NEEDED: brief reason]" at the very start of the draft.`;
 

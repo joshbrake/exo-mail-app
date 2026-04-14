@@ -17,10 +17,17 @@ let authRequiredCallback:
 // Extension display names (populated during registration)
 const extensionDisplayNames: Map<string, string> = new Map();
 
-// Auth handlers registered by extensions (extensionId -> { handler, checkAuth? })
+// Auth handlers registered by extensions (extensionId -> { handler, checkAuth?, authMethod?, token metadata })
 const authHandlers: Map<
   string,
-  { handler: () => Promise<void>; checkAuth?: () => Promise<boolean> }
+  {
+    handler: () => Promise<void>;
+    checkAuth?: () => Promise<boolean>;
+    authMethod?: "token" | "interactive";
+    tokenLabel?: string;
+    tokenPlaceholder?: string;
+    tokenHelpUrl?: string;
+  }
 > = new Map();
 
 // IPC handlers registered by extensions (extensionId:method -> handler)
@@ -98,10 +105,23 @@ export function createExtensionAPI(extensionId: string): ExtensionAPI {
 
     registerAuthHandler(
       handler: () => Promise<void>,
-      options?: { checkAuth?: () => Promise<boolean> },
+      options?: {
+        checkAuth?: () => Promise<boolean>;
+        authMethod?: "token" | "interactive";
+        tokenLabel?: string;
+        tokenPlaceholder?: string;
+        tokenHelpUrl?: string;
+      },
     ): void {
       log.info(`[Extensions] Registered auth handler for ${extensionId}`);
-      authHandlers.set(extensionId, { handler, checkAuth: options?.checkAuth });
+      authHandlers.set(extensionId, {
+        handler,
+        checkAuth: options?.checkAuth,
+        authMethod: options?.authMethod,
+        tokenLabel: options?.tokenLabel,
+        tokenPlaceholder: options?.tokenPlaceholder,
+        tokenHelpUrl: options?.tokenHelpUrl,
+      });
     },
 
     registerIpcHandler(method: string, handler: (params: unknown) => Promise<unknown>): void {
@@ -169,11 +189,32 @@ export function getAuthHandler(extensionId: string): (() => Promise<void>) | nul
  * Get all extensions that have registered auth handlers.
  * Returns their extensionId and display name.
  */
-export function getAuthExtensions(): Array<{ extensionId: string; displayName: string }> {
-  const results: Array<{ extensionId: string; displayName: string }> = [];
-  for (const extensionId of authHandlers.keys()) {
+export function getAuthExtensions(): Array<{
+  extensionId: string;
+  displayName: string;
+  authMethod?: "token" | "interactive";
+  tokenLabel?: string;
+  tokenPlaceholder?: string;
+  tokenHelpUrl?: string;
+}> {
+  const results: Array<{
+    extensionId: string;
+    displayName: string;
+    authMethod?: "token" | "interactive";
+    tokenLabel?: string;
+    tokenPlaceholder?: string;
+    tokenHelpUrl?: string;
+  }> = [];
+  for (const [extensionId, entry] of authHandlers.entries()) {
     const displayName = extensionDisplayNames.get(extensionId) || extensionId;
-    results.push({ extensionId, displayName });
+    results.push({
+      extensionId,
+      displayName,
+      authMethod: entry.authMethod,
+      tokenLabel: entry.tokenLabel,
+      tokenPlaceholder: entry.tokenPlaceholder,
+      tokenHelpUrl: entry.tokenHelpUrl,
+    });
   }
   return results;
 }

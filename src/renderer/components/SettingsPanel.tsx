@@ -712,11 +712,14 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
 
       {/* Tabs */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex space-x-1 p-2">
+        <div
+          className="flex space-x-1 p-2 overflow-x-auto"
+          style={{ scrollbarWidth: "none" }}
+        >
           <button
             onClick={() => setActiveTab("general")}
             data-active={activeTab === "general" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "general"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -727,7 +730,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("accounts")}
             data-active={activeTab === "accounts" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "accounts"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -738,7 +741,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("calendar")}
             data-active={activeTab === "calendar" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "calendar"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -749,7 +752,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("splits")}
             data-active={activeTab === "splits" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "splits"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -760,7 +763,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("snippets")}
             data-active={activeTab === "snippets" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "snippets"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -771,7 +774,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("signatures")}
             data-active={activeTab === "signatures" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "signatures"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -782,7 +785,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("prompts")}
             data-active={activeTab === "prompts" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "prompts"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -793,7 +796,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("style")}
             data-active={activeTab === "style" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "style"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -804,7 +807,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("assistant")}
             data-active={activeTab === "assistant" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "assistant"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -815,7 +818,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("memories")}
             data-active={activeTab === "memories" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "memories"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -826,7 +829,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("queue")}
             data-active={activeTab === "queue" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "queue"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -842,7 +845,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("agents")}
             data-active={activeTab === "agents" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "agents"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -853,7 +856,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           <button
             onClick={() => setActiveTab("extensions")}
             data-active={activeTab === "extensions" ? "true" : undefined}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "extensions"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -863,7 +866,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
           </button>
           <button
             onClick={() => setActiveTab("analytics")}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
               activeTab === "analytics"
                 ? "bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -898,7 +901,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   <button
                     onClick={() => handleThemeChange("light")}
                     data-active={themePreference === "light" ? "true" : undefined}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                       themePreference === "light"
                         ? "bg-blue-600 dark:bg-blue-500 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -909,7 +912,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   <button
                     onClick={() => handleThemeChange("dark")}
                     data-active={themePreference === "dark" ? "true" : undefined}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                       themePreference === "dark"
                         ? "bg-blue-600 dark:bg-blue-500 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -920,7 +923,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   <button
                     onClick={() => handleThemeChange("system")}
                     data-active={themePreference === "system" ? "true" : undefined}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                       themePreference === "system"
                         ? "bg-blue-600 dark:bg-blue-500 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -943,7 +946,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   <button
                     onClick={() => handleDensityChange("default")}
                     data-active={inboxDensity === "default" ? "true" : undefined}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                       inboxDensity === "default"
                         ? "bg-blue-600 dark:bg-blue-500 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -954,7 +957,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   <button
                     onClick={() => handleDensityChange("compact")}
                     data-active={inboxDensity === "compact" ? "true" : undefined}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                       inboxDensity === "compact"
                         ? "bg-blue-600 dark:bg-blue-500 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -980,7 +983,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   <button
                     onClick={() => handleKeyboardBindingsChange("superhuman")}
                     data-active={keyboardBindings === "superhuman" ? "true" : undefined}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                       keyboardBindings === "superhuman"
                         ? "bg-blue-600 dark:bg-blue-500 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -991,7 +994,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   <button
                     onClick={() => handleKeyboardBindingsChange("gmail")}
                     data-active={keyboardBindings === "gmail" ? "true" : undefined}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                       keyboardBindings === "gmail"
                         ? "bg-blue-600 dark:bg-blue-500 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -1023,7 +1026,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                       key={value}
                       onClick={() => handleUndoSendDelayChange(value)}
                       data-active={undoSendDelaySeconds === value ? "true" : undefined}
-                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                         undoSendDelaySeconds === value
                           ? "bg-blue-600 dark:bg-blue-500 text-white"
                           : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -1469,7 +1472,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
               </div>
 
               {/* Save button */}
-              <div className="flex justify-end">
+              <div className="flex items-center justify-end gap-3 mt-4">
                 <button
                   onClick={handleSaveGeneral}
                   disabled={isSavingGeneral}
@@ -1751,7 +1754,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   return Array.from(grouped.entries()).map(([accountId, cals]) => (
                     <div key={accountId} className="mb-6">
                       <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                        {accountEmails[accountId] ?? accountId}
+                        {accountEmails[accountId] ?? accounts.find((a) => a.id === accountId)?.email ?? accountId}
                       </h3>
                       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 divide-y divide-gray-200 dark:divide-gray-700">
                         {cals.map((cal) => (
@@ -1962,7 +1965,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                         Preview
                       </label>
                       <div
-                        className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm"
+                        className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-white text-gray-900 text-sm [&_a]:text-blue-600 [&_a]:underline"
                         dangerouslySetInnerHTML={{
                           __html: DOMPurify.sanitize(editingSignature.bodyHtml),
                         }}
@@ -2046,12 +2049,22 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
 
         {activeTab === "prompts" && (
           <div className="max-w-3xl space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                Prompts
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Customize the AI prompts that control email analysis, draft generation, and
+                archiving behavior.
+              </p>
+            </div>
+
             {isLoading ? (
               <p className="text-gray-500 dark:text-gray-400">Loading settings...</p>
             ) : (
               <>
                 {/* Analysis Prompt */}
-                <div>
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Analysis Prompt
@@ -2077,7 +2090,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 </div>
 
                 {/* Agent Drafter System Prompt */}
-                <div>
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Agent System Prompt
@@ -2149,7 +2162,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 </div>
 
                 {/* Draft Writing Prompt */}
-                <div>
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Draft Writing Prompt
@@ -2175,7 +2188,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 </div>
 
                 {/* Archive Ready Prompt */}
-                <div>
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Archive Ready Prompt
@@ -2201,7 +2214,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 </div>
 
                 {/* Save button */}
-                <div className="flex items-center justify-end gap-3">
+                <div className="flex items-center justify-end gap-3 mt-4">
                   {saveResult && (
                     <p className="text-sm text-green-600 dark:text-green-400">{saveResult}</p>
                   )}
@@ -2230,7 +2243,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 needed — it works from your synced sent emails.
               </p>
 
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-6">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
                 <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
                   How it works:
                 </h3>
@@ -2244,38 +2257,42 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 </ol>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Style Prompt
-                  </label>
-                  <button
-                    onClick={handleResetStylePrompt}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    Reset to default
-                  </button>
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Style Prompt
+                    </label>
+                    <button
+                      onClick={handleResetStylePrompt}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Reset to default
+                    </button>
+                  </div>
+                  <textarea
+                    value={stylePrompt}
+                    onChange={(e) => setStylePrompt(e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Describe your writing style..."
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    This prompt is prepended to your draft generation when style examples are
+                    available. It tells the AI how to interpret the examples of your past emails.
+                  </p>
                 </div>
-                <textarea
-                  value={stylePrompt}
-                  onChange={(e) => setStylePrompt(e.target.value)}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Describe your writing style..."
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  This prompt is prepended to your draft generation when style examples are
-                  available. It tells the AI how to interpret the examples of your past emails.
-                </p>
               </div>
 
-              <button
-                onClick={handleSaveStylePrompt}
-                disabled={isSaving}
-                className="mt-4 px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
-              >
-                {isSaving ? "Saving..." : "Save Style Prompt"}
-              </button>
+              <div className="flex items-center justify-end gap-3 mt-4">
+                <button
+                  onClick={handleSaveStylePrompt}
+                  disabled={isSaving}
+                  className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -2292,7 +2309,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 scheduling while you focus on the content of your response.
               </p>
 
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-6">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
                 <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
                   How it works:
                 </h3>
@@ -2304,65 +2321,67 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 </ol>
               </div>
 
-              {/* Enable toggle */}
-              <div className="flex items-center space-x-3 mb-6">
-                <button
-                  onClick={() => setEaEnabled(!eaEnabled)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    eaEnabled ? "bg-blue-600 dark:bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      eaEnabled ? "translate-x-6" : "translate-x-1"
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                {/* Enable toggle */}
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setEaEnabled(!eaEnabled)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      eaEnabled ? "bg-blue-600 dark:bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
                     }`}
-                  />
-                </button>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Enable EA integration for scheduling
-                </span>
-              </div>
-
-              {/* EA Details */}
-              {eaEnabled && (
-                <div className="space-y-4 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      EA Name
-                    </label>
-                    <input
-                      type="text"
-                      value={eaName}
-                      onChange={(e) => setEaName(e.target.value)}
-                      placeholder="e.g., Sarah"
-                      className="w-full p-3 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        eaEnabled ? "translate-x-6" : "translate-x-1"
+                      }`}
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      This name will be used in the deferral message.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      EA Email
-                    </label>
-                    <input
-                      type="email"
-                      value={eaEmail}
-                      onChange={(e) => setEaEmail(e.target.value)}
-                      placeholder="e.g., sarah@company.com"
-                      className="w-full p-3 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
-                    />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Your EA will be CC'd on scheduling-related emails.
-                    </p>
-                  </div>
+                  </button>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Enable EA integration for scheduling
+                  </span>
                 </div>
-              )}
+
+                {/* EA Details */}
+                {eaEnabled && (
+                  <div className="space-y-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        EA Name
+                      </label>
+                      <input
+                        type="text"
+                        value={eaName}
+                        onChange={(e) => setEaName(e.target.value)}
+                        placeholder="e.g., Sarah"
+                        className="w-full p-3 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        This name will be used in the deferral message.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        EA Email
+                      </label>
+                      <input
+                        type="email"
+                        value={eaEmail}
+                        onChange={(e) => setEaEmail(e.target.value)}
+                        placeholder="e.g., sarah@company.com"
+                        className="w-full p-3 border border-gray-300 dark:border-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Your EA will be CC'd on scheduling-related emails.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Save button */}
               {eaError && <p className="text-sm text-red-600 dark:text-red-400 mb-2">{eaError}</p>}
-              <div className="flex justify-end">
+              <div className="flex items-center justify-end gap-3 mt-4">
                 <button
                   onClick={handleSaveEA}
                   disabled={isSavingEA || eaSaved}
@@ -2629,12 +2648,12 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
         )}
 
         {activeTab === "agents" && (
-          <div className="space-y-6">
+          <div className="max-w-3xl space-y-6">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 Agent Settings
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Configure AI agent capabilities including browser automation.
               </p>
             </div>
@@ -3336,10 +3355,10 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
         {activeTab === "analytics" && (
           <div className="max-w-3xl space-y-6">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 Analytics
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Help improve Exo by sharing usage data and error reports. No email content is ever
                 sent.
               </p>
@@ -3372,7 +3391,10 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
             </div>
 
             {/* Save button */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-end gap-3 mt-4">
+              {analyticsSaveResult === "error" && (
+                <span className="text-sm text-red-600 dark:text-red-400">Failed to save</span>
+              )}
               <button
                 onClick={async () => {
                   setIsSavingAnalytics(true);
@@ -3409,7 +3431,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   }
                 }}
                 disabled={isSavingAnalytics}
-                className={`px-4 py-2 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${
+                className={`px-6 py-2 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors ${
                   analyticsSaveResult === "saved"
                     ? "bg-green-600 dark:bg-green-500"
                     : "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
@@ -3419,11 +3441,8 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   ? "Saving..."
                   : analyticsSaveResult === "saved"
                     ? "Saved!"
-                    : "Save Analytics Settings"}
+                    : "Save Changes"}
               </button>
-              {analyticsSaveResult === "error" && (
-                <span className="text-sm text-red-600 dark:text-red-400">Failed to save</span>
-              )}
             </div>
 
             {/* Info box about what's tracked */}

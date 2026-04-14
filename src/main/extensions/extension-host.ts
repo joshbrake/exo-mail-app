@@ -524,10 +524,26 @@ export class ExtensionHost {
    * Used during onboarding to show a "Connect Services" step.
    */
   async getExtensionsNeedingAuth(): Promise<
-    Array<{ extensionId: string; displayName: string; needsAuth: boolean }>
+    Array<{
+      extensionId: string;
+      displayName: string;
+      needsAuth: boolean;
+      authMethod?: "token" | "interactive";
+      tokenLabel?: string;
+      tokenPlaceholder?: string;
+      tokenHelpUrl?: string;
+    }>
   > {
     const authExtensions = getAuthExtensions();
-    const results: Array<{ extensionId: string; displayName: string; needsAuth: boolean }> = [];
+    const results: Array<{
+      extensionId: string;
+      displayName: string;
+      needsAuth: boolean;
+      authMethod?: "token" | "interactive";
+      tokenLabel?: string;
+      tokenPlaceholder?: string;
+      tokenHelpUrl?: string;
+    }> = [];
     for (const ext of authExtensions) {
       // Skip extensions without checkAuth — we can't determine their auth state
       if (!hasCheckAuth(ext.extensionId)) continue;

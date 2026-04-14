@@ -9,17 +9,20 @@ function UndoSendToastItem({ item }: { item: UndoSendItem }) {
   const removeUndoSend = useAppStore((s) => s.removeUndoSend);
   const [sendError, setSendError] = useState<string | null>(null);
   const sendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sentRef = useRef(false);
+  // Guards against both double-sends and send-after-undo races.
+  // "sending" means IPC is in flight; "sent" means completed; "undone" means cancelled.
+  const sendStateRef = useRef<"idle" | "sending" | "sent" | "undone">("idle");
 
   const doSend = useCallback(async () => {
-    if (sentRef.current) return;
-    sentRef.current = true;
+    // Only proceed if idle — "undone" means user already clicked Undo
+    if (sendStateRef.current !== "idle") return;
+    sendStateRef.current = "sending";
 
     try {
       const response = await window.api.compose.send(item.sendOptions);
       if (!response.success) {
         setSendError(response.error);
-        sentRef.current = false;
+        sendStateRef.current = "idle";
         return;
       }
 
@@ -53,16 +56,19 @@ function UndoSendToastItem({ item }: { item: UndoSendItem }) {
       }
     } catch (err) {
       setSendError(err instanceof Error ? err.message : "Failed to send");
-      sentRef.current = false;
+      sendStateRef.current = "idle";
       return;
     }
+    sendStateRef.current = "sent";
     cancelHandlers.delete(item.id);
     removeUndoSend(item.id);
   }, [item, removeUndoSend]);
 
   const handleUndo = useCallback(() => {
     if (sendTimerRef.current) clearTimeout(sendTimerRef.current);
-    sentRef.current = true; // prevent race
+    // If IPC is already in flight or completed, we can't undo
+    if (sendStateRef.current === "sending" || sendStateRef.current === "sent") return;
+    sendStateRef.current = "undone";
     cancelHandlers.delete(item.id);
 
     // Reopen compose with the draft content so the user can edit and re-send
@@ -101,25 +107,30 @@ function UndoSendToastItem({ item }: { item: UndoSendItem }) {
     };
   }, [item.id, handleUndo]);
 
+  // Use a ref for doSend so the timer doesn't restart when the callback identity changes
+  const doSendRef = useRef(doSend);
+  doSendRef.current = doSend;
+
   useEffect(() => {
     const endTime = item.scheduledAt + item.delayMs;
     const remaining = Math.max(0, endTime - Date.now());
 
     sendTimerRef.current = setTimeout(() => {
-      doSend();
+      doSendRef.current();
     }, remaining);
 
     return () => {
       if (sendTimerRef.current) clearTimeout(sendTimerRef.current);
     };
-  }, [item, doSend]);
+    // Only re-create timer when the item identity changes, not on every doSend recreation
+  }, [item.id, item.scheduledAt, item.delayMs]);
 
   return (
     <div className="bg-gray-900 dark:bg-gray-700 text-white rounded-lg shadow-lg flex items-center justify-between px-4 py-3 min-w-[280px]">
       <span className="text-sm">
         {sendError ? <span className="text-red-400">{sendError}</span> : "Message sent."}
       </span>
-      {!sentRef.current && !sendError && (
+      {sendStateRef.current === "idle" && !sendError && (
         <button
           onClick={handleUndo}
           className="ml-4 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0"
@@ -132,7 +143,7 @@ function UndoSendToastItem({ item }: { item: UndoSendItem }) {
         <button
           onClick={() => {
             setSendError(null);
-            sentRef.current = false;
+            sendStateRef.current = "idle";
             doSend();
           }}
           className="ml-4 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0"
