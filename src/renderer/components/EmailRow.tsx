@@ -1,4 +1,5 @@
-import { memo, useState, useRef, useEffect, useCallback } from "react";
+import { memo, useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import type { InboxDensity, SnoozedEmail } from "../../shared/types";
 import type { EmailThread } from "../store";
 import { useAppStore } from "../store";
@@ -121,13 +122,6 @@ const PRIORITY_OPTIONS = [
   { value: "high", label: "High", needsReply: true, priority: "high" },
 ] as const;
 
-const PRIORITY_COLORS: Record<string, string> = {
-  skip: "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400",
-  low: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
-  medium: "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300",
-  high: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300",
-};
-
 function PriorityDropdown({
   thread,
   currentValue,
@@ -141,6 +135,35 @@ function PriorityDropdown({
 }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const updateEmail = useAppStore((s) => s.updateEmail);
+  const [position, setPosition] = useState<
+    { top: number; right: number } | { bottom: number; right: number } | null
+  >(null);
+
+  // Compute fixed position from the anchor's bounding rect. We portal to
+  // document.body so the dropdown is not stacked against sibling virtualized
+  // rows that would otherwise paint over it. Flip above the anchor when there
+  // isn't enough room below.
+  useLayoutEffect(() => {
+    const updatePosition = () => {
+      const rect = anchorRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const menuHeight = dropdownRef.current?.offsetHeight ?? 140;
+      const right = window.innerWidth - rect.right;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < menuHeight + 8 && rect.top > menuHeight + 8) {
+        setPosition({ bottom: window.innerHeight - rect.top + 4, right });
+      } else {
+        setPosition({ top: rect.bottom + 4, right });
+      }
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [anchorRef]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -185,15 +208,20 @@ function PriorityDropdown({
     onClose();
   };
 
-  return (
+  if (!position) return null;
+
+  return createPortal(
     <div
       ref={dropdownRef}
-      className="absolute z-50 mt-1 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 min-w-[100px]"
+      role="menu"
+      style={{ position: "fixed", ...position }}
+      className="z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 min-w-[120px]"
       onClick={(e) => e.stopPropagation()}
     >
       {PRIORITY_OPTIONS.map((opt) => (
         <button
           key={opt.value}
+          role="menuitem"
           onClick={(e) => {
             e.stopPropagation();
             handleSelect(opt);
@@ -202,7 +230,7 @@ function PriorityDropdown({
             ${opt.value === currentValue ? "bg-gray-100 dark:bg-gray-700" : "hover:bg-gray-50 dark:hover:bg-gray-700/50"}`}
         >
           <span
-            className={`w-2 h-2 rounded-full ${
+            className={`w-2 h-2 rounded-full flex-shrink-0 ${
               opt.value === "high"
                 ? "bg-red-500"
                 : opt.value === "medium"
@@ -215,7 +243,8 @@ function PriorityDropdown({
           <span className="text-gray-700 dark:text-gray-200">{opt.label}</span>
         </button>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
