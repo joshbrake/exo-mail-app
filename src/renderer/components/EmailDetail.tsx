@@ -2663,6 +2663,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
   const setInlineReplyOpen = useAppStore((s) => s.setInlineReplyOpen);
   const focusedThreadEmailId = useAppStore((s) => s.focusedThreadEmailId);
   const setFocusedThreadEmailId = useAppStore((s) => s.setFocusedThreadEmailId);
+  const removeArchiveReadyThread = useAppStore((s) => s.removeArchiveReadyThread);
 
   const { threads: currentThreads } = useSplitFilteredThreads();
 
@@ -4037,6 +4038,18 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
                   priority: (newPriority as "high" | "medium" | "low" | "skip" | null) ?? undefined,
                 },
               });
+              if (newNeedsReply) {
+                const { threadId, accountId } = latestReceivedEmail;
+                removeArchiveReadyThread(threadId);
+                window.api.archiveReady
+                  .dismiss(threadId, accountId)
+                  .catch((err: unknown) =>
+                    console.error(
+                      "Failed to dismiss archive-ready thread after priority override:",
+                      err,
+                    ),
+                  );
+              }
             }}
           />
         )}
