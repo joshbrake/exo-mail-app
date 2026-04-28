@@ -50,9 +50,9 @@ export function useSignature(accountId: string) {
     : "";
 
   const signatureHtml = activeSignature?.bodyHtml
-    ? `<div class="email-signature"><br>${activeSignature.bodyHtml}${exoBrandingLine}</div>`
+    ? `<div class="email-signature">${activeSignature.bodyHtml}${exoBrandingLine}</div>`
     : exoBrandingLine
-      ? `<div class="email-signature"><br>${exoBrandingLine}</div>`
+      ? `<div class="email-signature">${exoBrandingLine}</div>`
       : "";
 
   return {
