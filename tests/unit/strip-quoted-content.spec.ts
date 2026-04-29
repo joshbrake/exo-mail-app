@@ -283,3 +283,70 @@ test.describe("media stripping", () => {
     expect(stripQuotedContent(input)).toBe("<div>Photos:</div><div>Done</div>");
   });
 });
+
+// ============================================================
+// Phase A additions — patterns mirrored from quote-elision.ts
+// ============================================================
+
+test.describe("plain text — Original Message marker", () => {
+  test("strips Outlook-style -----Original Message----- block", () => {
+    const input = `Reply here.
+
+-----Original Message-----
+From: someone
+Subject: Old`;
+    expect(stripQuotedContent(input)).toBe("Reply here.");
+  });
+});
+
+test.describe("plain text — Begin forwarded message", () => {
+  test("strips Apple Mail Begin forwarded message marker", () => {
+    const input = `FYI.
+
+Begin forwarded message:
+From: someone`;
+    expect(stripQuotedContent(input)).toBe("FYI.");
+  });
+});
+
+test.describe("plain text — Outlook header block", () => {
+  test("strips From:/Sent:/To:/Subject: header block", () => {
+    const input = `Sure, I'll take a look.
+
+From: Bob <bob@example.com>
+Sent: Monday, January 6, 2025 3:45 PM
+To: Alice <alice@example.com>
+Subject: Re: Q4 planning
+
+Original message body here.`;
+    expect(stripQuotedContent(input)).toBe("Sure, I'll take a look.");
+  });
+
+  test("does not strip lone From: line with no following headers", () => {
+    const input = `From the project team, we're done.`;
+    expect(stripQuotedContent(input)).toBe(input);
+  });
+});
+
+test.describe("html — Original Message marker", () => {
+  test("strips -----Original Message----- in HTML", () => {
+    const input = `<div>My reply</div><div>-----Original Message-----</div><div>From: someone</div>`;
+    const result = stripQuotedContent(input);
+    expect(result).toContain("My reply");
+    expect(result).not.toContain("From: someone");
+  });
+});
+
+test.describe("html — Outlook header block", () => {
+  test("strips From:/Sent:/To:/Subject: at line boundaries", () => {
+    const input = `<div>My reply.</div><div>From: Bob</div><div>Sent: Mon Jan 6</div><div>To: Alice</div><div>Subject: Old</div><div>Old body</div>`;
+    const result = stripQuotedContent(input);
+    expect(result).toContain("My reply");
+    expect(result).not.toContain("Old body");
+  });
+
+  test("does not strip when From: appears mid-text without following headers", () => {
+    const input = `<div>From the project team, we got approval.</div>`;
+    expect(stripQuotedContent(input)).toBe(input);
+  });
+});

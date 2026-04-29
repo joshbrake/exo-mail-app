@@ -236,7 +236,13 @@ function buildIframeHtml(
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 14px;
-      line-height: 1.6;
+      /* Loose line-height (1.6) is only desirable for plain-text-in-HTML
+         (pre-line) bodies. HTML emails (especially Outlook with its explicit
+         spacer paragraphs) render with too much vertical whitespace at 1.6.
+         Pin to 1.2 explicitly for HTML rather than the keyword "normal",
+         which resolves to font-dependent values; Aptos and other modern
+         fonts can compute "normal" as high as 1.5, leaving the gaps loose. */
+      line-height: ${needsPreLine ? "1.6" : "1.2"};
       color: ${useLightMode ? "#374151" : "#e5e7eb"};
       background: ${useLightMode ? "transparent" : "#1f2937"};
       margin: 0;
