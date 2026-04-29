@@ -8,7 +8,7 @@ import {
   stripLargeDataUris,
 } from "../services/email-body-cache";
 import { splitAddressList, extractFirstName } from "../utils/address-parsing";
-import { splitQuotedContent } from "../services/quote-elision";
+import { splitQuotedContent, emailBodyToPlainText } from "../services/quote-elision";
 import { ComposeEditor } from "./ComposeEditor";
 import { formatSnoozeTime } from "./SnoozeMenu";
 import { AddressInput } from "./AddressInput";
@@ -291,24 +291,34 @@ function EmailBodyRenderer({
       try {
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
         if (doc) {
-          // Temporarily remove the iframe's fixed height so the document can
-          // expand to its natural size. Without this, scrollHeight returns the
-          // *constrained* height (matching the iframe) instead of the full
-          // content height — the classic iframe auto-sizing chicken-and-egg.
-          const prev = iframe.style.height;
+          // Temporarily zero out both `height` and `min-height` so neither the
+          // iframe's own constraint nor the wrapper's clamps inflate the read.
+          // Without this, `documentElement.scrollHeight` reports at least the
+          // current viewport height (browser behavior in standards mode), and
+          // since we add +20 each cycle the iframe grows by 20px every time
+          // ResizeObserver / the timeout-fallbacks fire.
+          const prevHeight = iframe.style.height;
+          const prevMinHeight = iframe.style.minHeight;
           iframe.style.height = "0px";
+          iframe.style.minHeight = "0px";
 
+          // Use body's content metrics — they are not viewport-floored.
+          // Skip `documentElement.scrollHeight` entirely; in standards mode
+          // it returns max(content, viewport), which causes the feedback loop.
           const bodyScroll = doc.body?.scrollHeight ?? 0;
           const bodyOffset = doc.body?.offsetHeight ?? 0;
-          const docScroll = doc.documentElement?.scrollHeight ?? 0;
           const docOffset = doc.documentElement?.offsetHeight ?? 0;
-          const height = Math.max(bodyScroll, bodyOffset, docScroll, docOffset);
+          const height = Math.max(bodyScroll, bodyOffset, docOffset);
 
           // Restore immediately to avoid visual flicker
-          iframe.style.height = prev;
+          iframe.style.height = prevHeight;
+          iframe.style.minHeight = prevMinHeight;
 
           if (height > 0) {
-            setIframeHeight(height + 20);
+            // +4px is enough to avoid clipping descenders; larger paddings
+            // (+20) leave a visible gap at the bottom of short replies and
+            // also amplified the old growth-loop bug.
+            setIframeHeight(height + 4);
           }
         }
       } catch {
@@ -426,8 +436,12 @@ function EmailBodyRenderer({
         referrerPolicy="no-referrer"
         style={{
           width: "100%",
+          // While the iframe is loading (iframeHeight=0) we reserve some space
+          // and hide via opacity so the layout doesn't jump. Once we've sized
+          // to the actual content height, the iframe shrinks to fit — without
+          // any min-height floor that would leave empty space below short
+          // replies.
           height: iframeHeight > 0 ? `${iframeHeight}px` : "150px",
-          minHeight: "100px",
           border: "none",
           display: "block",
           opacity: iframeHeight > 0 ? 1 : 0,
@@ -990,10 +1004,22 @@ function ThreadMessage({
   const [showHeaderDetails, setShowHeaderDetails] = useState(false);
   const [showQuotedBody, setShowQuotedBody] = useState(false);
 
+  // Plain-text bodies of earlier messages in the thread, used as a fallback
+  // signal: if pattern detection misses, any block in this body that appears
+  // verbatim in an earlier message is quoted history.
+  const priorMessageTexts = useMemo(() => {
+    const idx = threadEmails.findIndex((e) => e.id === email.id);
+    if (idx <= 0) return [];
+    // Look back at most 10 messages — substring check is O(n*m).
+    return threadEmails
+      .slice(Math.max(0, idx - 10), idx)
+      .map((e) => emailBodyToPlainText(e.body ?? ""));
+  }, [threadEmails, email.id]);
+
   // Strip trailing quoted/forwarded text so only new content shows by default.
   const { newContent, hasQuotedContent } = useMemo(
-    () => splitQuotedContent(lightBody ?? ""),
-    [lightBody],
+    () => splitQuotedContent(lightBody ?? "", priorMessageTexts),
+    [lightBody, priorMessageTexts],
   );
 
   const handleHeaderClick = (e: React.MouseEvent) => {

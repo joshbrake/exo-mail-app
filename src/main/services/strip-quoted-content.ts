@@ -5,6 +5,12 @@
  * Used to reduce token usage when sending emails to Claude for analysis.
  * Quoted content from previous messages in a thread is redundant when
  * the analyzer already has the thread history or only needs the latest message.
+ *
+ * Detection patterns mirror those in `src/renderer/services/quote-elision.ts`,
+ * which handles the user-facing below-the-fold UI. They share the same
+ * markers (Gmail/Outlook/Yahoo wrappers, "On ... wrote:", forwarded markers,
+ * Original Message, Outlook header blocks) so the analyzer sees the same
+ * trimmed body the user does.
  */
 
 function isHtml(body: string): boolean {
@@ -71,6 +77,21 @@ function stripHtmlQuoted(html: string): string {
     if (result) return result;
   }
 
+  // Fallback: Outlook "Original Message" separator
+  const origMatch = /-{3,}\s*Original Message\s*-{3,}/i.exec(html);
+  if (origMatch) {
+    const result = returnIfHasContent(html, origMatch.index);
+    if (result) return result;
+  }
+
+  // Fallback: "Begin forwarded message:" (Apple Mail / iOS forwards)
+  const beginFwdMatch = /(?:^|>|\n)\s*Begin forwarded message:/i.exec(html);
+  if (beginFwdMatch) {
+    const startIdx = html.toLowerCase().indexOf("begin forwarded message:", beginFwdMatch.index);
+    const result = returnIfHasContent(html, startIdx);
+    if (result) return result;
+  }
+
   // Fallback: "On ... wrote:" pattern (common in HTML replies without a class marker).
   // Anchored to a line boundary (start of string, or after <br>/<div>/<p>) to avoid
   // matching mid-sentence occurrences like "On this point, engineers wrote:".
@@ -84,7 +105,39 @@ function stripHtmlQuoted(html: string): string {
     if (result) return result;
   }
 
+  // Fallback: Outlook header block — "From: ..." at a line/block boundary
+  // followed within ~600 chars by at least two of (Sent|Date|To|Subject).
+  const outlookCut = findOutlookHeaderBlockHtml(html);
+  if (outlookCut !== null) {
+    const result = returnIfHasContent(html, outlookCut);
+    if (result) return result;
+  }
+
   return html;
+}
+
+/**
+ * Search HTML for a `From:` field at a line/block boundary, and return its
+ * index if it's followed within a short window by at least two more
+ * Outlook-style header fields. Returns `null` if no header block is found.
+ */
+function findOutlookHeaderBlockHtml(html: string): number | null {
+  const fromPattern = /(?:^|<br\s*\/?>|<\/div>|<\/p>|<p[^>]*>|<div[^>]*>|\n)\s*From:\s/gi;
+  let match: RegExpExecArray | null;
+  while ((match = fromPattern.exec(html))) {
+    const startIdx = html.toLowerCase().indexOf("from:", match.index);
+    if (startIdx < 0) continue;
+    // Strip tags from a 600-char window so we can check field names against
+    // the rendered text rather than markup.
+    const windowText = html.substring(startIdx, startIdx + 600).replace(/<[^>]*>/g, " ");
+    let count = 0;
+    if (/\bSent:\s*\S/i.test(windowText)) count++;
+    if (/\bDate:\s*\S/i.test(windowText)) count++;
+    if (/\bTo:\s*\S/i.test(windowText)) count++;
+    if (/\bSubject:\s*\S/i.test(windowText)) count++;
+    if (count >= 2) return startIdx;
+  }
+  return null;
 }
 
 /** Truncate html at `index` and return it only if visible text remains. */
@@ -126,6 +179,25 @@ function stripPlainTextQuoted(text: string): string {
       if (above) return above;
     }
 
+    // Outlook "Original Message" separator
+    if (/^-{3,}\s*Original Message\s*-{3,}$/i.test(line)) {
+      const above = lines.slice(0, i).join("\n").trimEnd();
+      if (above) return above;
+    }
+
+    // Apple Mail / iOS forwards: "Begin forwarded message:"
+    if (/^Begin forwarded message:/i.test(line)) {
+      const above = lines.slice(0, i).join("\n").trimEnd();
+      if (above) return above;
+    }
+
+    // Outlook header block: "From:" line followed by at least two of
+    // Sent:/Date:/To:/Cc:/Subject: in the immediately following lines.
+    if (/^From:\s*\S/.test(line) && hasOutlookHeaderFollowing(lines, i)) {
+      const above = lines.slice(0, i).join("\n").trimEnd();
+      if (above) return above;
+    }
+
     // Block of ">" quoted lines — only strip if there's non-quoted content above
     if (line.startsWith(">")) {
       const above = lines.slice(0, i).join("\n").trimEnd();
@@ -136,4 +208,17 @@ function stripPlainTextQuoted(text: string): string {
   }
 
   return text;
+}
+
+function hasOutlookHeaderFollowing(lines: string[], startIdx: number): boolean {
+  let count = 0;
+  for (let i = startIdx + 1; i < Math.min(startIdx + 6, lines.length); i++) {
+    const line = lines[i].trim();
+    if (/^(Sent|Date|To|Cc|Subject):\s*\S/.test(line)) {
+      count++;
+    } else if (line) {
+      break;
+    }
+  }
+  return count >= 2;
 }
