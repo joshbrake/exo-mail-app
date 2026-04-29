@@ -214,7 +214,43 @@ function extractFromSanitizedDoc(sanitizedHtml: string): {
   // Remove style tags from body before extracting body content
   doc.body.querySelectorAll("style").forEach((s) => s.remove());
 
+  // Mark whitespace-only paragraphs/divs so the iframe CSS can render them as
+  // a smaller gap. Outlook stuffs `<p class="MsoNormal"><o:p>&nbsp;</o:p></p>`
+  // between every content paragraph, and Gmail uses `<div><br></div>`. With
+  // line-height: 1.2 each one is ~19px tall (full line of empty space), which
+  // the user perceives as much looser than Mac Mail's rendering. Tagging them
+  // here lets us collapse them via CSS without breaking content blocks.
+  // Wrapped defensively because malformed/unusual DOMs (custom-namespace
+  // elements like <o:p>) can occasionally surprise the walker.
+  try {
+    markSpacerBlocks(doc.body);
+  } catch (e) {
+    console.warn("[email-body-cache] markSpacerBlocks failed", e);
+  }
+
   return { styles, bodyContent: doc.body.innerHTML };
+}
+
+/**
+ * Add a `data-exo-spacer` attribute to whitespace-only paragraphs and divs
+ * so the iframe CSS can render them as a small fixed gap rather than a full
+ * line of font-size-tall empty space.
+ *
+ * A node qualifies as a spacer iff its text content (after stripping NBSP)
+ * is empty AND it contains no images/tables. `<br>`-only blocks count too.
+ */
+function markSpacerBlocks(root: Element): void {
+  const candidates = root.querySelectorAll("p, div");
+  for (const el of Array.from(candidates)) {
+    // Skip if this element has substantive children (we only want leaf-ish
+    // empty blocks). Allowed children of a spacer: <br>, <o:p>, <span>,
+    // <font>, <b>, <i>, <u>, <em>, <strong> — none of which add visible
+    // content unless they contain text.
+    const text = (el.textContent || "").replace(/[\s ]+/g, "");
+    if (text.length > 0) continue;
+    if (el.querySelector("img, table, hr, video, audio, iframe")) continue;
+    el.setAttribute("data-exo-spacer", "");
+  }
 }
 
 function buildIframeHtml(
@@ -257,6 +293,22 @@ function buildIframeHtml(
     table { max-width: 100%; border-collapse: collapse; }
     /* Contain wide tables/images so they don't overflow the viewport */
     .email-wrapper { max-width: 100%; overflow-x: auto; }
+    /* Outlook (<p>&nbsp;</p>) and Gmail (<div><br></div>) emit empty
+       paragraphs/divs as line-break spacers between every content paragraph.
+       At a normal line-height each one is ~19px tall, which renders looser
+       than Mac Mail / Outlook native. Compact them to a fixed small gap so
+       paragraph spacing matches what other clients show. The selector also
+       covers `.MsoNormal` paragraphs that contain only whitespace. */
+    [data-exo-spacer] {
+      height: 8px !important;
+      min-height: 0 !important;
+      max-height: 8px !important;
+      line-height: 0 !important;
+      font-size: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+    }
     td, th { vertical-align: top; }
     pre, code { white-space: pre-wrap; word-break: break-word; font-size: 13px; }
     blockquote { margin: 8px 0; padding-left: 12px; border-left: 2px solid ${useLightMode ? "#e5e7eb" : "#4b5563"}; color: ${useLightMode ? "#6b7280" : "#9ca3af"}; }
