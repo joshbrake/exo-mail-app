@@ -192,7 +192,7 @@ function SplitEditor({ split, onSave, onCancel, existingCount }: SplitEditorProp
           </p>
         </div>
 
-        <div className="border-t pt-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
           <label className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -211,7 +211,7 @@ function SplitEditor({ split, onSave, onCancel, existingCount }: SplitEditorProp
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t">
+        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onCancel}
             className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
