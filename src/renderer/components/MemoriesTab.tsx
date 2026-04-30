@@ -295,7 +295,7 @@ export function MemoriesTab({
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex-shrink-0"
+          className="px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex-shrink-0"
         >
           {showAddForm ? "Cancel" : "Add Memory"}
         </button>

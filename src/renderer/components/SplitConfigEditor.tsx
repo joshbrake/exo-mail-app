@@ -221,7 +221,7 @@ function SplitEditor({ split, onSave, onCancel, existingCount }: SplitEditorProp
           <button
             onClick={handleSave}
             disabled={!isValid}
-            className="px-3 py-1.5 text-sm bg-blue-500 dark:bg-blue-400 text-white rounded-md hover:bg-blue-600 dark:hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {split ? "Save" : "Create"}
           </button>
@@ -431,7 +431,7 @@ export function SplitConfigEditor() {
             </button>
             <button
               onClick={() => setIsCreating(true)}
-              className="px-3 py-1.5 text-sm bg-blue-500 dark:bg-blue-400 text-white rounded-md hover:bg-blue-600 dark:hover:bg-blue-500"
+              className="px-3 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
             >
               + New Split
             </button>

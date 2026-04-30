@@ -391,7 +391,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
               <button
                 onClick={handleSaveCredentials}
                 disabled={isLoading || !googleClientId.trim() || !googleClientSecret.trim()}
-                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
               >
                 {isLoading ? "Saving..." : "Continue"}
               </button>
@@ -454,7 +454,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
               <button
                 onClick={handleSaveApiKey}
                 disabled={isLoading}
-                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
               >
                 {isLoading ? "Saving..." : "Continue"}
               </button>
@@ -541,7 +541,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                         <button
                           onClick={() => handleExtensionAuth(ext.extensionId, ext.authType)}
                           disabled={authenticatingExtension !== null}
-                          className="px-4 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                          className="px-4 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
                         >
                           {authenticatingExtension === ext.extensionId ? (
                             <span className="flex items-center gap-2">
@@ -594,7 +594,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                               authenticatingExtension !== null ||
                               !tokenInputs[ext.extensionId]?.trim()
                             }
-                            className="px-4 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                            className="px-4 py-1.5 text-sm bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
                           >
                             {authenticatingExtension === ext.extensionId ? (
                               <span className="flex items-center gap-2">
@@ -621,7 +621,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
               <button
                 onClick={() => setStep("prompts")}
                 disabled={authenticatingExtension !== null}
-                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
               >
                 Continue
               </button>
@@ -698,7 +698,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                   }
                 }}
                 disabled={isLoading}
-                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
               >
                 {isLoading ? "Saving..." : "Continue"}
               </button>
@@ -772,7 +772,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                   }
                 }}
                 disabled={isLoading}
-                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                className="w-full py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
               >
                 Get Started
               </button>
