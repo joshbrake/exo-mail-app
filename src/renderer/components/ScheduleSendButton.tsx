@@ -344,7 +344,7 @@ export function ScheduledMessagesList({ accountId }: { accountId: string }) {
             </div>
             <button
               onClick={() => handleCancel(msg.id)}
-              className="ml-2 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+              className="ml-2 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
             >
               Cancel
             </button>

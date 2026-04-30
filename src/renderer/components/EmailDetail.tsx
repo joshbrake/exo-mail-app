@@ -1121,7 +1121,7 @@ function ThreadMessage({
                 e.stopPropagation();
                 onReply();
               }}
-              className={`p-1 rounded transition-colors ${
+              className={`p-1 rounded-md transition-colors ${
                 useWhiteCard
                   ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                   : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -1147,7 +1147,7 @@ function ThreadMessage({
                 e.stopPropagation();
                 onReplyAll();
               }}
-              className={`p-1 rounded transition-colors ${
+              className={`p-1 rounded-md transition-colors ${
                 useWhiteCard
                   ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                   : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -1174,7 +1174,7 @@ function ThreadMessage({
                 e.stopPropagation();
                 onForward();
               }}
-              className={`p-1 rounded transition-colors ${
+              className={`p-1 rounded-md transition-colors ${
                 useWhiteCard
                   ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                   : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -1201,7 +1201,7 @@ function ThreadMessage({
       {/* Expandable sender details */}
       {showHeaderDetails && (
         <div
-          className={`mx-4 mt-1 p-2 rounded border text-xs space-y-1 ${
+          className={`mx-4 mt-1 p-2 rounded-md border text-xs space-y-1 ${
             useWhiteCard
               ? "bg-gray-50 border-gray-200"
               : "bg-gray-100/50 dark:bg-gray-700/40 border-gray-200 dark:border-gray-600"
@@ -1299,7 +1299,7 @@ function ThreadMessage({
         {hasQuotedContent && (
           <button
             onClick={() => setShowQuotedBody(!showQuotedBody)}
-            className="px-2 py-0.5 mt-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded text-sm transition-colors"
+            className="px-2 py-0.5 mt-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md text-sm transition-colors"
             title={showQuotedBody ? "Hide quoted text" : "Show quoted text"}
           >
             ···
@@ -1851,7 +1851,7 @@ function InlineReply({
           {!showAddressFields ? (
             <button
               onClick={() => setShowAddressFields(true)}
-              className="text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded px-1 py-0.5 -mx-1 transition-colors"
+              className="text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded-md px-1 py-0.5 -mx-1 transition-colors"
               data-testid="inline-reply-summary"
             >
               <span className="text-green-600 dark:text-green-400 font-medium">
@@ -2066,12 +2066,12 @@ function InlineReply({
                   }}
                   placeholder='Add context... e.g. "decline politely" or "suggest Tuesday"'
                   disabled={isGeneratingDraft || !!pendingDraftTaskId}
-                  className="flex-1 px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700/50 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
+                  className="flex-1 px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700/50 rounded-md text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:opacity-50"
                 />
                 <button
                   onClick={handleGenerateDraft}
                   disabled={isGeneratingDraft || !!pendingDraftTaskId}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded transition-colors disabled:opacity-50 flex-shrink-0"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded-md transition-colors disabled:opacity-50 flex-shrink-0"
                 >
                   {(isGeneratingDraft || pendingDraftTaskId) && (
                     <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -2129,7 +2129,7 @@ function InlineReply({
           <div className="mt-1">
             <button
               onClick={() => setShowQuotedContent(!showQuotedContent)}
-              className="px-2 py-0.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded text-sm transition-colors"
+              className="px-2 py-0.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-md text-sm transition-colors"
               title={showQuotedContent ? "Hide original" : "Show original"}
             >
               ···
@@ -2163,13 +2163,13 @@ function InlineReply({
                 }
               }}
               placeholder="Refine with AI... e.g. 'make it shorter' or 'more formal'"
-              className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={isRefining}
             />
             <button
               onClick={handleRefine}
               disabled={isRefining || !refineCritique.trim()}
-              className="px-3 py-1.5 bg-purple-600 dark:bg-purple-500 text-white text-sm font-medium rounded hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-purple-600 dark:bg-purple-500 text-white text-sm font-medium rounded-md hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
               {isRefining ? (
                 <>
@@ -2197,7 +2197,7 @@ function InlineReply({
             {preRefineContent && (
               <button
                 onClick={handleRevertRefine}
-                className="px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Revert
               </button>
@@ -2206,7 +2206,7 @@ function InlineReply({
         )}
         {/* Save as Memory prompt — shown after a successful refinement */}
         {showSaveMemory && (
-          <div className="mt-2 p-2.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/40 rounded text-sm">
+          <div className="mt-2 p-2.5 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/40 rounded-md text-sm">
             {memorySaved ? (
               <span className="text-purple-700 dark:text-purple-300 font-medium">Memory saved</span>
             ) : (
@@ -2246,7 +2246,7 @@ function InlineReply({
                       handleSaveMemory();
                     }
                   }}
-                  className="w-full px-2 py-1 mb-1.5 border border-purple-200 dark:border-purple-700 dark:bg-gray-700 dark:text-gray-100 rounded text-sm focus:ring-1 focus:ring-purple-400"
+                  className="w-full px-2 py-1 mb-1.5 border border-purple-200 dark:border-purple-700 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm focus:ring-1 focus:ring-purple-400"
                   placeholder="Describe the preference to remember..."
                 />
                 <div className="flex items-center gap-2 flex-wrap">
@@ -2321,7 +2321,7 @@ function InlineReply({
                   <button
                     onClick={handleSaveMemory}
                     disabled={!memoryContent.trim() || isSavingMemory || isClassifyingMemory}
-                    className="ml-auto px-2 py-0.5 bg-purple-600 dark:bg-purple-500 text-white text-xs font-medium rounded hover:bg-purple-700 dark:hover:bg-purple-600 disabled:opacity-50 transition-colors"
+                    className="ml-auto px-2 py-0.5 bg-purple-600 dark:bg-purple-500 text-white text-xs font-medium rounded-md hover:bg-purple-700 dark:hover:bg-purple-600 disabled:opacity-50 transition-colors"
                   >
                     {isSavingMemory ? "Saving..." : "Save"}
                   </button>
@@ -2489,7 +2489,7 @@ function NewEmailCompose({
         <span className="text-gray-900 dark:text-gray-100 font-medium text-sm">New Message</span>
         <button
           onClick={onDiscard ?? (() => onCancel(getFormState()))}
-          className="ml-auto p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors"
+          className="ml-auto p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 rounded-md transition-colors"
           title="Discard draft"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3757,7 +3757,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
             <div className="flex items-center">
               <button
                 onClick={handleArchive}
-                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                 title="Archive"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3771,7 +3771,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
               </button>
               <button
                 onClick={handleTrash}
-                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                 title="Delete"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3785,7 +3785,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
               </button>
               <button
                 onClick={handleMarkUnread}
-                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                 title="Mark as unread"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3799,7 +3799,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
               </button>
               <button
                 onClick={handleToggleStar}
-                className={`p-1.5 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
                   isStarred
                     ? "text-yellow-400 hover:text-yellow-500"
                     : "text-gray-400 dark:text-gray-500 hover:text-yellow-400"
@@ -3823,7 +3823,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
               {/* Snooze button */}
               <button
                 onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
-                className={`p-1.5 rounded transition-colors ${
+                className={`p-1.5 rounded-md transition-colors ${
                   snoozedThreads.has(latestEmail.threadId)
                     ? "text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                     : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -3849,7 +3849,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
                     focusedThreadEmailId ?? replyTargetEmailId ?? latestEmail.id,
                   )
                 }
-                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                 title="Reply All"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3874,7 +3874,7 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
                     focusedThreadEmailId ?? replyTargetEmailId ?? latestEmail.id,
                   )
                 }
-                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                 title="Forward"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

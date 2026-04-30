@@ -328,7 +328,7 @@ export const EmailPreviewSidebar = memo(function EmailPreviewSidebar() {
             <p className="text-gray-400 dark:text-gray-500 text-sm">Draft selected</p>
             <p className="text-gray-300 dark:text-gray-500 text-xs mt-1">
               Press{" "}
-              <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-400 font-mono text-xs">
+              <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-400 font-mono text-xs">
                 Cmd+J
               </kbd>{" "}
               to ask agent about this draft
@@ -482,7 +482,7 @@ export const EmailPreviewSidebar = memo(function EmailPreviewSidebar() {
             {availableTabs.length > 1 ? (
               <>
                 Press{" "}
-                <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-400 font-mono">
+                <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-400 font-mono">
                   b
                 </kbd>{" "}
                 to switch tabs
@@ -490,7 +490,7 @@ export const EmailPreviewSidebar = memo(function EmailPreviewSidebar() {
             ) : (
               <>
                 Press{" "}
-                <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-400 font-mono">
+                <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-400 font-mono">
                   Enter
                 </kbd>{" "}
                 to read email

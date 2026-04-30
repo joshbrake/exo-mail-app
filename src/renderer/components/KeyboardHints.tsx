@@ -52,7 +52,7 @@ const COMPOSE_HINTS: Hint[] = [
 function HintItem({ hint }: { hint: Hint }) {
   return (
     <span className="inline-flex items-center gap-1">
-      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md">
         {hint.key}
       </kbd>
       <span className="text-gray-500 dark:text-gray-400">{hint.label}</span>

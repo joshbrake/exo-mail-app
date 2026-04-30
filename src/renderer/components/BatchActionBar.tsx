@@ -59,7 +59,7 @@ export function BatchActionBar({
       {/* Action buttons */}
       <button
         onClick={onArchive}
-        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded transition-colors"
+        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-md transition-colors"
         title="Archive selected (e)"
         data-testid="batch-archive"
       >
@@ -74,7 +74,7 @@ export function BatchActionBar({
       </button>
       <button
         onClick={onTrash}
-        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded transition-colors"
+        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-md transition-colors"
         title="Delete selected (#)"
         data-testid="batch-trash"
       >
@@ -89,7 +89,7 @@ export function BatchActionBar({
       </button>
       <button
         onClick={onMarkUnread}
-        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded transition-colors"
+        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-md transition-colors"
         title="Mark unread (u)"
         data-testid="batch-mark-unread"
       >
@@ -104,7 +104,7 @@ export function BatchActionBar({
       </button>
       <button
         onClick={onToggleStar}
-        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded transition-colors"
+        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-md transition-colors"
         title="Star selected (s)"
         data-testid="batch-star"
       >
@@ -119,7 +119,7 @@ export function BatchActionBar({
       </button>
       <button
         onClick={onSnooze}
-        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded transition-colors"
+        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-md transition-colors"
         title="Snooze selected (h)"
         data-testid="batch-snooze"
       >

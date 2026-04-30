@@ -262,7 +262,7 @@ function ToolCallEvent({
                 </span>
                 {isCode ? (
                   <>
-                    <pre className="mt-0.5 text-xs bg-gray-900 dark:bg-gray-950 text-gray-300 rounded p-2 overflow-x-auto font-mono">
+                    <pre className="mt-0.5 text-xs bg-gray-900 dark:bg-gray-950 text-gray-300 rounded-md p-2 overflow-x-auto font-mono">
                       <SqlHighlight code={displayValue} />
                       {isTruncated && !inputExpanded && <span className="text-gray-500">...</span>}
                     </pre>
@@ -339,7 +339,7 @@ function ErrorBlock({
         <p className="mb-2">Agent authentication required.</p>
         <button
           onClick={onAuthRequest}
-          className="px-3 py-1 text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors"
+          className="px-3 py-1 text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors"
         >
           Sign in to agent service
         </button>
@@ -361,7 +361,7 @@ function ErrorBlock({
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-2 px-3 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+          className="mt-2 px-3 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
         >
           Retry
         </button>
@@ -910,7 +910,7 @@ export const AgentTabContent = memo(function AgentTabContent({ emailId }: { emai
             <button
               onClick={handleRegenerate}
               disabled={regenerating}
-              className="p-1 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded transition-colors disabled:opacity-30"
+              className="p-1 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-md transition-colors disabled:opacity-30"
               title="Regenerate draft"
             >
               {regenerating ? (
@@ -952,7 +952,7 @@ export const AgentTabContent = memo(function AgentTabContent({ emailId }: { emai
                 window.api?.agent?.cancel?.(task.taskId);
                 cancelAgentTask(task.taskId);
               }}
-              className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors"
+              className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-md transition-colors"
               title="Cancel"
             >
               <svg

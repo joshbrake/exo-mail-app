@@ -76,7 +76,7 @@ function ToolbarButton({
       disabled={disabled}
       title={title}
       tabIndex={-1}
-      className={`p-1.5 rounded text-sm ${
+      className={`p-1.5 rounded-md text-sm ${
         active
           ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
           : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -433,12 +433,12 @@ function LinkPopover({
           }
         }}
         placeholder="https://example.com"
-        className="w-56 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="w-56 px-2 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
       <button
         type="button"
         onClick={apply}
-        className="px-2 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
+        className="px-2 py-1 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
       >
         Apply
       </button>
@@ -449,7 +449,7 @@ function LinkPopover({
             editor.chain().focus().extendMarkRange("link").unsetLink().run();
             onClose();
           }}
-          className="px-2 py-1 text-sm rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+          className="px-2 py-1 text-sm rounded-md text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
         >
           Remove
         </button>

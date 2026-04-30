@@ -310,21 +310,21 @@ export function ExtensionsTab() {
                         v{ext.version}
                       </span>
                       {ext.isActive ? (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                           Inactive
                         </span>
                       )}
                       {ext.hasAgentProvider && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
                           Agent Provider
                         </span>
                       )}
                       {!ext.hasAgentProvider && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                           Extension
                         </span>
                       )}
@@ -355,12 +355,12 @@ export function ExtensionsTab() {
                       </div>
                     )}
                     {ext.loadError && (
-                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-700 dark:text-red-300 flex items-center justify-between">
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-xs text-red-700 dark:text-red-300 flex items-center justify-between">
                         <span>Load error: {ext.loadError}</span>
                         <button
                           onClick={() => handleRetryProvider(ext.id)}
                           disabled={retryingProvider === ext.id}
-                          className="ml-2 px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-900/60 rounded transition-colors disabled:opacity-50"
+                          className="ml-2 px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-900/60 rounded-md transition-colors disabled:opacity-50"
                         >
                           {retryingProvider === ext.id ? "Retrying..." : "Retry"}
                         </button>
@@ -399,7 +399,7 @@ export function ExtensionsTab() {
                                         },
                                       }))
                                     }
-                                    className="rounded border-gray-300 dark:border-gray-600"
+                                    className="rounded-md border-gray-300 dark:border-gray-600"
                                   />
                                 ) : (
                                   <input
@@ -428,7 +428,7 @@ export function ExtensionsTab() {
                                         },
                                       }))
                                     }
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                   />
                                 )}
                               </div>
@@ -439,7 +439,7 @@ export function ExtensionsTab() {
                           <button
                             onClick={() => handleSaveSettings(ext.id)}
                             disabled={savingSettings === ext.id}
-                            className="px-3 py-1 text-xs font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded transition-colors disabled:opacity-50"
+                            className="px-3 py-1 text-xs font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded-md transition-colors disabled:opacity-50"
                           >
                             {savingSettings === ext.id ? "Saving..." : "Save"}
                           </button>
@@ -505,7 +505,7 @@ export function ExtensionsTab() {
                       {ext.displayName}
                     </h4>
                     <span className="text-xs text-gray-400 dark:text-gray-500">v{ext.version}</span>
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                       Built-in
                     </span>
                   </div>
@@ -645,13 +645,13 @@ export function ExtensionsTab() {
         <p className="font-medium mb-2">Installing extensions</p>
         <p>
           Extensions are distributed as{" "}
-          <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">.zip</code> files. Click
+          <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded-md">.zip</code> files. Click
           "Install Extension" to select a file and install it. Packages can add sidebar panels,
           email enrichment providers, and agent providers.
         </p>
         <p className="mt-2 text-gray-500 dark:text-gray-400">
           To build an extension, run:{" "}
-          <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">
+          <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded-md">
             node scripts/build-extension.mjs &lt;extension-dir&gt;
           </code>
         </p>

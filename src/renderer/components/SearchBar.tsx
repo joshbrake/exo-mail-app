@@ -344,7 +344,7 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
               />
             </svg>
           )}
-          <kbd className="px-2 py-1 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded">
+          <kbd className="px-2 py-1 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-md">
             esc
           </kbd>
         </div>
@@ -455,27 +455,27 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
               <div className="font-medium mb-2">Search operators:</div>
               <ul className="space-y-1">
                 <li>
-                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded-md">
                     from:email@example.com
                   </code>{" "}
                   - Search by sender
                 </li>
                 <li>
-                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded-md">
                     to:email@example.com
                   </code>{" "}
                   - Search by recipient
                 </li>
                 <li>
-                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">subject:keyword</code>{" "}
+                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded-md">subject:keyword</code>{" "}
                   - Search in subject
                 </li>
                 <li>
-                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">"exact phrase"</code>{" "}
+                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded-md">"exact phrase"</code>{" "}
                   - Search exact phrase
                 </li>
                 <li>
-                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">in:draft</code> - View
+                  <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded-md">in:draft</code> - View
                   drafts
                 </li>
               </ul>
@@ -486,14 +486,14 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
         {/* Footer hints */}
         <div className="flex items-center gap-4 px-4 py-2 text-xs text-gray-400 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <span>
-            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">↑↓</kbd> to navigate
+            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-md">↑↓</kbd> to navigate
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Enter</kbd>{" "}
+            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-md">Enter</kbd>{" "}
             {footerHint}
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd> to close
+            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-md">Esc</kbd> to close
           </span>
         </div>
       </div>

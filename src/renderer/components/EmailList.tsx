@@ -523,7 +523,7 @@ export function EmailList() {
             onClick={() => {
               if (isSentView) setCurrentSplitId("__priority__");
             }}
-            className={`px-2 py-1 text-sm font-medium rounded transition-colors focus:outline-none ${
+            className={`px-2 py-1 text-sm font-medium rounded-md transition-colors focus:outline-none ${
               !isSentView
                 ? "text-gray-900 dark:text-gray-100"
                 : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
@@ -533,7 +533,7 @@ export function EmailList() {
           </button>
           <button
             onClick={() => setCurrentSplitId("__sent__")}
-            className={`px-2 py-1 text-sm font-medium rounded transition-colors inline-flex items-center gap-1 focus:outline-none ${
+            className={`px-2 py-1 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-1 focus:outline-none ${
               isSentView
                 ? "text-gray-900 dark:text-gray-100"
                 : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
@@ -554,7 +554,7 @@ export function EmailList() {
           {isArchiveReadyView && threads.length > 0 && (
             <button
               onClick={handleArchiveAll}
-              className="px-2.5 py-1 text-xs font-medium text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 rounded transition-colors flex items-center gap-1"
+              className="px-2.5 py-1 text-xs font-medium text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 rounded-md transition-colors flex items-center gap-1"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -614,7 +614,7 @@ export function EmailList() {
           <button
             onClick={cycleDensity}
             title={`Density: ${densityLabels[inboxDensity]}`}
-            className="p-1 rounded text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <svg
               className="w-4 h-4"
