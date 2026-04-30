@@ -70,7 +70,7 @@ export function UpdateBanner() {
         </span>
         <button
           onClick={handleDownload}
-          className="px-2.5 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-700 bg-white hover:bg-indigo-50 dark:hover:bg-indigo-100 rounded transition-colors"
+          className="px-2.5 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-700 bg-white hover:bg-indigo-50 dark:hover:bg-indigo-100 rounded-md transition-colors"
         >
           Download
         </button>
@@ -142,7 +142,7 @@ export function UpdateBanner() {
         <span className="text-white font-medium whitespace-nowrap">Restart to update</span>
         <button
           onClick={handleInstall}
-          className="px-2.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-700 bg-white hover:bg-green-50 dark:hover:bg-green-100 rounded transition-colors"
+          className="px-2.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-700 bg-white hover:bg-green-50 dark:hover:bg-green-100 rounded-md transition-colors"
         >
           Restart now
         </button>

@@ -1246,7 +1246,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                       </span>
                       <button
                         onClick={() => window.api.updates.download()}
-                        className="px-3 py-1 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded transition-colors"
+                        className="px-3 py-1 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded-md transition-colors"
                       >
                         Download
                       </button>
@@ -1311,7 +1311,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                       </span>
                       <button
                         onClick={() => window.api.updates.install()}
-                        className="px-3 py-1 text-sm font-medium text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 rounded transition-colors"
+                        className="px-3 py-1 text-sm font-medium text-white bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 rounded-md transition-colors"
                       >
                         Restart Now
                       </button>
@@ -1332,9 +1332,9 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Required for auto-updates from a private repo. Needs{" "}
-                    <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">repo</code> scope or
+                    <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded-md">repo</code> scope or
                     fine-grained{" "}
-                    <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">contents:read</code>{" "}
+                    <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded-md">contents:read</code>{" "}
                     permission. Also used for private extension downloads.
                   </p>
                 </div>
@@ -1427,7 +1427,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                                     : [...prev, priority],
                                 );
                               }}
-                              className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
+                              className="rounded-md border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500"
                             />
                             <span className="capitalize">{priority}</span>
                           </label>
@@ -1613,7 +1613,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
                               {account.isPrimary && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-800/60 text-blue-800 dark:text-blue-200 mr-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 dark:bg-blue-800/60 text-blue-800 dark:text-blue-200 mr-2">
                                   Primary
                                 </span>
                               )}
@@ -1680,7 +1680,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                               );
                             }
                           }}
-                          className="flex-1 max-w-[160px] px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                          className="flex-1 max-w-[160px] px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400"
                         />
                         <label className="text-xs text-gray-500 dark:text-gray-400 w-10">
                           Color
@@ -1698,7 +1698,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                                 ),
                               );
                             }}
-                            className="w-6 h-6 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
+                            className="w-6 h-6 rounded-md cursor-pointer border border-gray-200 dark:border-gray-600"
                           />
                           {account.color && (
                             <button
@@ -1868,7 +1868,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                     type="checkbox"
                     checked={showExoBranding}
                     onChange={(e) => handleToggleExoBranding(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded-md border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
                   />
                   <div>
                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -1903,7 +1903,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                               </div>
                               <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
                                 {sig.isDefault && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
                                     Default
                                   </span>
                                 )}
@@ -2617,7 +2617,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                       {prefetchProgress.agentDrafts.items.map((item) => (
                         <div
                           key={item.emailId}
-                          className="flex items-center gap-2 text-xs py-1 px-2 rounded bg-gray-50 dark:bg-gray-700/50"
+                          className="flex items-center gap-2 text-xs py-1 px-2 rounded-md bg-gray-50 dark:bg-gray-700/50"
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
@@ -2642,7 +2642,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                             }
                           </span>
                           <span
-                            className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            className={`flex-shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-medium ${
                               item.priority === "high"
                                 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                                 : item.priority === "medium"
@@ -2886,7 +2886,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                     <p className="text-sm text-amber-800 dark:text-amber-300">
                       <strong>How to launch Chrome with debugging:</strong>
                     </p>
-                    <code className="block mt-2 text-xs bg-amber-100 dark:bg-amber-900/30 p-2 rounded text-amber-900 dark:text-amber-300 font-mono">
+                    <code className="block mt-2 text-xs bg-amber-100 dark:bg-amber-900/30 p-2 rounded-md text-amber-900 dark:text-amber-300 font-mono">
                       /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome
                       --remote-debugging-port={chromeDebugPort}
                       {chromeProfilePath ? ` --user-data-dir="${chromeProfilePath}"` : ""}

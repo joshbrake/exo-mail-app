@@ -332,7 +332,7 @@ export const EmailRow = memo(
                 onCheckboxChange();
               }}
               onClick={(e) => e.stopPropagation()}
-              className="w-3.5 h-3.5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              className="w-3.5 h-3.5 rounded-md border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
               data-testid="thread-checkbox"
             />
           ) : (
@@ -378,7 +378,7 @@ export const EmailRow = memo(
                   if (thread.analysis) setShowPriorityMenu((v) => !v);
                 }}
                 className={`
-            ${ds.priorityBadge} rounded uppercase font-medium w-14 text-center cursor-pointer inline-block
+            ${ds.priorityBadge} rounded-md uppercase font-medium w-14 text-center cursor-pointer inline-block
             ${isSelected && !isChecked ? "bg-white/20 text-white" : priorityLabel.className}
           `}
               >

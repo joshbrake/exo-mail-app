@@ -748,7 +748,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             placeholder="Type a command..."
             className="flex-1 text-base outline-none placeholder-gray-400 dark:text-gray-100 dark:placeholder-gray-500 bg-transparent"
           />
-          <kbd className="px-2 py-0.5 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded">
+          <kbd className="px-2 py-0.5 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-md">
             esc
           </kbd>
         </div>
@@ -783,7 +783,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       <ActionIcon path={action.icon} />
                       <span className="flex-1">{action.label}</span>
                       {action.shortcut && (
-                        <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded font-mono text-gray-500 dark:text-gray-400">
+                        <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md font-mono text-gray-500 dark:text-gray-400">
                           {action.shortcut}
                         </kbd>
                       )}
@@ -798,14 +798,14 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         {/* Footer */}
         <div className="flex items-center gap-4 px-4 py-2 text-xs text-gray-400 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <span>
-            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">&uarr;&darr;</kbd>{" "}
+            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-md">&uarr;&darr;</kbd>{" "}
             navigate
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Enter</kbd> execute
+            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-md">Enter</kbd> execute
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Esc</kbd> close
+            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-md">Esc</kbd> close
           </span>
         </div>
       </div>

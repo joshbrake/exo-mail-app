@@ -319,7 +319,7 @@ export function MemoriesTab({
                     setNewScope(e.target.value as MemoryScope);
                     setNewScopeValue("");
                   }}
-                  className="px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm"
+                  className="px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                 >
                   {(Object.keys(SCOPE_LABELS) as MemoryScope[]).map((s) => (
                     <option key={s} value={s}>
@@ -349,7 +349,7 @@ export function MemoriesTab({
                           : "e.g. student, investor, recruiter"
                     }
                     list={newScope === "category" ? "memory-categories" : undefined}
-                    className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm"
+                    className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                   />
                   {newScope === "category" && existingCategories.length > 0 && (
                     <datalist id="memory-categories">
@@ -373,7 +373,7 @@ export function MemoriesTab({
                 onChange={(e) => setNewContent(e.target.value)}
                 placeholder='e.g. "Use a gentler tone" or "Look up their profile at university.edu/directory"'
                 rows={2}
-                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm resize-none"
+                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm resize-none"
               />
             </div>
             <div className="flex justify-end">
@@ -382,7 +382,7 @@ export function MemoriesTab({
                 disabled={
                   !newContent.trim() || (newScope !== "global" && !newScopeValue.trim()) || isSaving
                 }
-                className="px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
               >
                 {isSaving ? "Saving..." : "Save Memory"}
               </button>
@@ -432,7 +432,7 @@ export function MemoriesTab({
                     <div
                       key={memory.id}
                       ref={memory.id === highlightMemoryIds?.[0] ? promotedHighlightRef : undefined}
-                      className={`flex items-start gap-2 p-2 rounded border transition-colors ${
+                      className={`flex items-start gap-2 p-2 rounded-md border transition-colors ${
                         highlightSet.has(memory.id)
                           ? "bg-purple-50 dark:bg-purple-900/30 border-purple-300 dark:border-purple-600 ring-2 ring-purple-400/50"
                           : memory.enabled
@@ -442,7 +442,7 @@ export function MemoriesTab({
                     >
                       <button
                         onClick={() => handleToggle(memory)}
-                        className={`mt-0.5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
+                        className={`mt-0.5 w-4 h-4 rounded-md border flex-shrink-0 flex items-center justify-center transition-colors ${
                           memory.enabled
                             ? "bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white"
                             : "border-gray-300 dark:border-gray-600"
@@ -472,7 +472,7 @@ export function MemoriesTab({
                                 if (e.key === "Enter") handleSaveEdit(memory.id);
                                 if (e.key === "Escape") setEditingId(null);
                               }}
-                              className="flex-1 px-2 py-0.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm"
+                              className="flex-1 px-2 py-0.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md text-sm"
                               autoFocus
                             />
                             <button
@@ -515,7 +515,7 @@ export function MemoriesTab({
                             setEditingId(memory.id);
                             setEditContent(memory.content);
                           }}
-                          className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
+                          className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-md transition-colors"
                           title="Edit"
                         >
                           <svg
@@ -534,7 +534,7 @@ export function MemoriesTab({
                         </button>
                         <button
                           onClick={() => handleDelete(memory.id)}
-                          className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors"
+                          className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 rounded-md transition-colors"
                           title="Delete"
                         >
                           <svg
@@ -590,7 +590,7 @@ export function MemoriesTab({
                   <div
                     key={dm.id}
                     ref={dm.id === firstHighlightedDraftId ? draftHighlightRef : undefined}
-                    className={`flex items-start gap-2 p-2 rounded border transition-colors ${
+                    className={`flex items-start gap-2 p-2 rounded-md border transition-colors ${
                       highlightSet.has(dm.id)
                         ? "bg-purple-50 dark:bg-purple-900/30 border-purple-300 dark:border-purple-600 ring-2 ring-purple-400/50"
                         : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
@@ -662,7 +662,7 @@ export function MemoriesTab({
                             setError("Failed to promote");
                           }
                         }}
-                        className="px-2 py-0.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded transition-colors"
+                        className="px-2 py-0.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded-md transition-colors"
                         title="Promote to active memory"
                       >
                         Promote
@@ -680,7 +680,7 @@ export function MemoriesTab({
                             setError("Failed to delete");
                           }
                         }}
-                        className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors"
+                        className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 rounded-md transition-colors"
                         title="Delete"
                       >
                         <svg

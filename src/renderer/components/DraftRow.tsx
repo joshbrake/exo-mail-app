@@ -118,7 +118,7 @@ export const DraftRow = React.memo(
         {/* Draft badge */}
         <span
           className={`
-        ${ds.badge} rounded flex-shrink-0 uppercase font-medium
+        ${ds.badge} rounded-md flex-shrink-0 uppercase font-medium
         ${
           isSelected
             ? "bg-white/20 text-white"

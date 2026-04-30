@@ -115,7 +115,7 @@ export function AnalysisPrioritySection({
               <button
                 key={opt.value}
                 onClick={() => setSelectedValue(opt.value)}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                   selectedValue === opt.value
                     ? opt.value === "skip"
                       ? "bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200"
@@ -147,7 +147,7 @@ export function AnalysisPrioritySection({
                 }
               }}
               placeholder="Reason (optional) — helps improve future classification"
-              className="w-full px-3 py-1.5 text-xs rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="w-full px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
               autoFocus
             />
             <div className="flex items-center gap-2 justify-end">
@@ -164,7 +164,7 @@ export function AnalysisPrioritySection({
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                className="px-3 py-1 text-xs font-medium rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
               >
                 {isSaving ? "Saving..." : "Save"}
               </button>

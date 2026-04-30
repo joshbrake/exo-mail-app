@@ -59,7 +59,7 @@ export function AgentConfirmationDialog({
       {isHighRisk ? (
         // Full preview for high-risk actions
         <div className="px-3 pb-2">
-          <pre className="text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 rounded p-2 overflow-x-auto max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700">
+          <pre className="text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-md p-2 overflow-x-auto max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700">
             {inputStr}
           </pre>
         </div>
@@ -73,7 +73,7 @@ export function AgentConfirmationDialog({
             {expanded ? "Hide input" : "Show input"}
           </button>
           {expanded && (
-            <pre className="mt-1 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 rounded p-2 overflow-x-auto max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700">
+            <pre className="mt-1 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-md p-2 overflow-x-auto max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700">
               {inputStr}
             </pre>
           )}
@@ -84,13 +84,13 @@ export function AgentConfirmationDialog({
       <div className="px-3 py-2 flex items-center gap-2 border-t border-amber-200 dark:border-amber-800">
         <button
           onClick={() => handleResponse(true)}
-          className="px-3 py-1 text-xs font-medium bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+          className="px-3 py-1 text-xs font-medium bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
         >
           Approve
         </button>
         <button
           onClick={() => handleResponse(false)}
-          className="px-3 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+          className="px-3 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
         >
           Reject
         </button>

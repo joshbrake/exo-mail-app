@@ -59,7 +59,7 @@ function ProviderRow({ provider }: { provider: AgentProviderConfig }) {
     >
       {/* Checkbox */}
       <div
-        className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+        className={`w-4 h-4 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${
           isSelected ? "bg-purple-600 border-purple-600" : "border-gray-300 dark:border-gray-600"
         }`}
       >
@@ -159,7 +159,7 @@ export function AgentsSidebar() {
         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Agents</span>
         <button
           onClick={toggleAgentsSidebar}
-          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
+          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md transition-colors"
           title="Close sidebar"
         >
           <svg
