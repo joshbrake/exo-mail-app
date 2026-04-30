@@ -42,7 +42,7 @@ export function SenderProfilePanel({
     <div className="p-4">
       {/* Reminder indicator */}
       {isReminder && (
-        <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs px-2 py-1 rounded mb-3">
+        <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs px-2 py-1 rounded-md mb-3">
           Returned via reminder - showing original sender
         </div>
       )}
