@@ -154,7 +154,7 @@
       "provider": "github",
       "owner": "joshbrake",
       "repo": "exo-mail-app",
-      "private": true
+      "private": false
     },
     "directories": {
       "output": "release"

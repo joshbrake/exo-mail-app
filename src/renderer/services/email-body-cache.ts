@@ -298,7 +298,7 @@ function buildIframeHtml(
        At a normal line-height each one is ~19px tall, which renders looser
        than Mac Mail / Outlook native. Compact them to a fixed small gap so
        paragraph spacing matches what other clients show. The selector also
-       covers `.MsoNormal` paragraphs that contain only whitespace. */
+       covers MsoNormal paragraphs that contain only whitespace. */
     [data-exo-spacer] {
       height: 8px !important;
       min-height: 0 !important;

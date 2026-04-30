@@ -99,11 +99,16 @@ class AutoUpdateService extends EventEmitter {
    */
   private refreshFeedURL(): void {
     if (app.isPackaged) {
+      // The repo is public, so use the unauthenticated releases.atom feed.
+      // Setting `private: true` without a `GH_TOKEN` makes electron-updater
+      // send a malformed Authorization header that GitHub rejects with 502.
+      // If the token is provided, we'll still pass it (some users set it to
+      // raise their rate limit), but the default path no longer requires it.
       autoUpdater.setFeedURL({
         provider: "github",
         owner: "joshbrake",
         repo: "exo-mail-app",
-        private: true,
+        private: false,
         token: process.env.GH_TOKEN || undefined,
       });
     }
