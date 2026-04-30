@@ -523,7 +523,7 @@ export function EmailList() {
             onClick={() => {
               if (isSentView) setCurrentSplitId("__priority__");
             }}
-            className={`px-2 py-1 text-sm font-medium rounded-md transition-colors focus:outline-none ${
+            className={`px-2 py-1 text-sm font-medium rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               !isSentView
                 ? "text-gray-900 dark:text-gray-100"
                 : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
@@ -533,7 +533,7 @@ export function EmailList() {
           </button>
           <button
             onClick={() => setCurrentSplitId("__sent__")}
-            className={`px-2 py-1 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-1 focus:outline-none ${
+            className={`px-2 py-1 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               isSentView
                 ? "text-gray-900 dark:text-gray-100"
                 : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"

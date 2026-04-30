@@ -139,7 +139,7 @@ function SearchResultThreadRow({
         {/* Sent badge - show if user replied (latest email is from user) */}
         {thread.userReplied && (
           <span
-            className={`text-[9px] px-1 py-px rounded flex-shrink-0 uppercase font-medium ${
+            className={`text-[9px] px-1 py-px rounded-md flex-shrink-0 uppercase font-medium ${
               isSelected
                 ? "bg-white/20 text-white"
                 : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
@@ -383,7 +383,7 @@ function SearchResultsView() {
           <button
             onClick={clearActiveSearch}
             aria-label="Close search"
-            className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -1953,7 +1953,7 @@ export default function App() {
                             </div>
                             <button
                               onClick={() => handleCancelScheduled(msg.id)}
-                              className="flex-shrink-0 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              className="flex-shrink-0 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                               title="Cancel and save as draft"
                             >
                               Cancel
@@ -1973,7 +1973,7 @@ export default function App() {
               openCompose("new");
               setViewMode("full");
             }}
-            className="px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center gap-1"
             title="Compose (C)"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1988,7 +1988,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setShowSettings(true)}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors focus:outline-none"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             title="Settings"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2060,7 +2060,7 @@ export default function App() {
               </span>
               <button
                 onClick={handleCancelReauth}
-                className="px-3 py-1 text-sm font-medium text-red-800 dark:text-red-200 bg-red-200 dark:bg-red-800 hover:bg-red-300 dark:hover:bg-red-700 rounded transition-colors"
+                className="px-3 py-1 text-sm font-medium text-red-800 dark:text-red-200 bg-red-200 dark:bg-red-800 hover:bg-red-300 dark:hover:bg-red-700 rounded-md transition-colors"
               >
                 Cancel
               </button>
@@ -2069,7 +2069,7 @@ export default function App() {
             <button
               onClick={() => handleReauth(account.id)}
               disabled={reauthingAccountId !== null}
-              className="px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200 bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 rounded transition-colors disabled:opacity-50"
+              className="px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200 bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 rounded-md transition-colors disabled:opacity-50"
             >
               Re-authenticate
             </button>
@@ -2109,7 +2109,7 @@ export default function App() {
                   console.error(`[Auth] Extension auth failed for ${extId}:`, err);
                 }
               }}
-              className="px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200 bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 rounded transition-colors"
+              className="px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200 bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 rounded-md transition-colors"
             >
               Authenticate
             </button>
@@ -2167,7 +2167,7 @@ export default function App() {
                   console.error(`[Auth] Agent auth failed for ${providerId}:`, err);
                 }
               }}
-              className="px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200 bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 rounded transition-colors"
+              className="px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200 bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 rounded-md transition-colors"
             >
               Authenticate
             </button>

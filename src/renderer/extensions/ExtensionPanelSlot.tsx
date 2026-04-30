@@ -123,13 +123,13 @@ export function ExtensionPanelLoading(): React.ReactElement {
   return (
     <div className="flex flex-col overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/50">
-        <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded animate-pulse w-16" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded-md animate-pulse w-16" />
       </div>
       <div className="flex-1 p-4">
         <div className="space-y-3">
-          <div className="h-12 bg-gray-100 dark:bg-gray-700 rounded animate-pulse" />
-          <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-3/4" />
-          <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse w-1/2" />
+          <div className="h-12 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse" />
+          <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse w-3/4" />
+          <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse w-1/2" />
         </div>
       </div>
     </div>
