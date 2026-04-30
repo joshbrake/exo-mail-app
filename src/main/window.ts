@@ -86,6 +86,10 @@ export function createWindow(): BrowserWindow {
   // HMR for renderer base on electron-vite cli
   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
     mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    // Auto-open DevTools in dev because the custom application menu (in
+    // src/main/index.ts) drops the View menu, which removes the default
+    // Cmd+Opt+I shortcut. Detached so it doesn't shrink the window.
+    mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }

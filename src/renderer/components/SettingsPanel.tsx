@@ -55,6 +55,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [addAccountPhase, setAddAccountPhase] = useState("Connecting...");
   const [accountError, setAccountError] = useState<string | null>(null);
+  const [reconnectingAccountId, setReconnectingAccountId] = useState<string | null>(null);
   const [analysisPrompt, setAnalysisPrompt] = useState("");
   const [draftPrompt, setDraftPrompt] = useState("");
   const [archiveReadyPrompt, setArchiveReadyPrompt] = useState("");
@@ -663,6 +664,32 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
       }
     } catch (err) {
       setAccountError(err instanceof Error ? err.message : "Failed to remove account");
+    }
+  };
+
+  const handleReconnect = async (accountId: string) => {
+    if (reconnectingAccountId) return;
+    setReconnectingAccountId(accountId);
+    setAccountError(null);
+    try {
+      const result = (await window.api.auth.reauth(accountId)) as {
+        success: boolean;
+        error?: string;
+      };
+      if (result.success) {
+        // Mark connected in the store; full sync state catches up via App.tsx
+        // listeners and the next account-switch.
+        setAccounts(accounts.map((a) => (a.id === accountId ? { ...a, isConnected: true } : a)));
+        // Kick a sync so emails refresh.
+        window.api.sync.now(accountId).catch((e: unknown) => console.error("[sync] now failed", e));
+      } else if (result.error && result.error !== "Authorization cancelled") {
+        setAccountError(result.error);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Reconnect failed";
+      if (msg !== "Authorization cancelled") setAccountError(msg);
+    } finally {
+      setReconnectingAccountId(null);
     }
   };
 
@@ -1595,6 +1622,15 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
+                          {!account.isConnected && (
+                            <button
+                              onClick={() => handleReconnect(account.id)}
+                              disabled={reconnectingAccountId === account.id}
+                              className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {reconnectingAccountId === account.id ? "Connecting…" : "Reconnect"}
+                            </button>
+                          )}
                           {!account.isPrimary && (
                             <button
                               onClick={() => handleSetPrimary(account.id)}
