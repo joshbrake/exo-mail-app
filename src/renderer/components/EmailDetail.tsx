@@ -1121,7 +1121,7 @@ function ThreadMessage({
                 e.stopPropagation();
                 onReply();
               }}
-              className={`p-1 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors ${
                 useWhiteCard
                   ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                   : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -1147,7 +1147,7 @@ function ThreadMessage({
                 e.stopPropagation();
                 onReplyAll();
               }}
-              className={`p-1 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors ${
                 useWhiteCard
                   ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                   : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
@@ -1174,7 +1174,7 @@ function ThreadMessage({
                 e.stopPropagation();
                 onForward();
               }}
-              className={`p-1 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors ${
                 useWhiteCard
                   ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                   : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"

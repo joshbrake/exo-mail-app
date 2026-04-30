@@ -1024,7 +1024,7 @@ export const AgentTabContent = memo(function AgentTabContent({ emailId }: { emai
             <button
               onClick={handleFollowUp}
               disabled={!followUpInput.trim() || task.status === "running"}
-              className="p-1.5 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg disabled:opacity-30 transition-colors"
+              className="p-1.5 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-md disabled:opacity-30 transition-colors"
             >
               <svg
                 className="w-4 h-4"
