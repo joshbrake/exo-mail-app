@@ -1503,7 +1503,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 <button
                   onClick={handleSaveGeneral}
                   disabled={isSavingGeneral}
-                  className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
                 >
                   {isSavingGeneral ? "Saving..." : "Save Changes"}
                 </button>
@@ -2072,7 +2072,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                     <button
                       onClick={() => handleSaveSignature(editingSignature)}
                       disabled={isSavingSignatures || !editingSignature.name.trim()}
-                      className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                      className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
                     >
                       {isSavingSignatures ? "Saving..." : "Save Signature"}
                     </button>
@@ -2257,7 +2257,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                    className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
                   >
                     {isSaving ? "Saving..." : "Save Changes"}
                   </button>
@@ -2324,7 +2324,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 <button
                   onClick={handleSaveStylePrompt}
                   disabled={isSaving}
-                  className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
                 >
                   {isSaving ? "Saving..." : "Save Changes"}
                 </button>
@@ -2421,7 +2421,7 @@ export function SettingsPanel({ onClose, initialTab }: SettingsPanelProps) {
                 <button
                   onClick={handleSaveEA}
                   disabled={isSavingEA || eaSaved}
-                  className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50"
                 >
                   {isSavingEA ? "Saving..." : eaSaved ? "Saved!" : "Save Changes"}
                 </button>

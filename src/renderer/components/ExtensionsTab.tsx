@@ -270,7 +270,7 @@ export function ExtensionsTab() {
         <button
           onClick={handleInstall}
           disabled={isInstalling}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded-lg transition-colors disabled:opacity-50"
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded-md transition-colors disabled:opacity-50"
         >
           {isInstalling ? "Installing..." : "Install Extension"}
         </button>
@@ -587,7 +587,7 @@ export function ExtensionsTab() {
 
             <div className="flex items-center gap-3">
               <button
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
                 disabled={openclawTesting}
                 onClick={async () => {
                   // Save first, then test
@@ -612,7 +612,7 @@ export function ExtensionsTab() {
               </button>
 
               <button
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                 onClick={async () => {
                   await window.api.settings.set({
                     openclaw: {

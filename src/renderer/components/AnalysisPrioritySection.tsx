@@ -164,7 +164,7 @@ export function AnalysisPrioritySection({
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-3 py-1 text-xs font-medium rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                className="px-3 py-1 text-xs font-medium rounded-md bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50"
               >
                 {isSaving ? "Saving..." : "Save"}
               </button>

@@ -438,7 +438,7 @@ function LinkPopover({
       <button
         type="button"
         onClick={apply}
-        className="px-2 py-1 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+        className="px-2 py-1 text-sm rounded-md bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600"
       >
         Apply
       </button>
