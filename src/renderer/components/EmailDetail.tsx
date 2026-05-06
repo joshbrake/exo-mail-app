@@ -797,125 +797,6 @@ function formatMessageHeader(
   return result;
 }
 
-// Inline "Generate Draft" prompt — shown after thread messages when no draft exists
-function GenerateDraftInline({
-  emailId,
-  onStarted,
-}: {
-  emailId: string;
-  onStarted?: (taskId: string) => void;
-}) {
-  const [instructions, setInstructions] = useState("");
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const updateEmail = useAppStore((s) => s.updateEmail);
-  const startAgentTask = useAppStore((s) => s.startAgentTask);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  const handleGenerate = useCallback(async () => {
-    if (generating) return;
-    setGenerating(true);
-    setError(null);
-    try {
-      updateEmail(emailId, { draft: undefined });
-      const result = (await window.api?.drafts?.rerunAgent?.(
-        emailId,
-        instructions.trim() || undefined,
-      )) as { success: boolean; data?: { taskId: string }; error?: string } | undefined;
-
-      if (result?.success && result.data) {
-        const { taskId } = result.data;
-        const email = useAppStore.getState().emails.find((e) => e.id === emailId);
-        startAgentTask(taskId, emailId, ["claude"], "", {
-          accountId: email?.accountId || "",
-          currentEmailId: emailId,
-          currentThreadId: email?.threadId || "",
-          userEmail: "",
-        });
-        trackEvent("draft_generated", {
-          source: "inline",
-          has_instructions: !!instructions.trim(),
-        });
-        onStarted?.(taskId);
-      } else {
-        setError(result?.error || "Failed to generate draft");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate draft");
-    } finally {
-      setGenerating(false);
-    }
-  }, [emailId, instructions, generating, updateEmail, startAgentTask, onStarted]);
-
-  return (
-    <div className="mx-6 my-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-0.5">
-          <svg
-            className="w-4 h-4 text-blue-500 dark:text-blue-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-            />
-          </svg>
-        </div>
-        <div className="flex-1 min-w-0">
-          <textarea
-            ref={inputRef}
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                handleGenerate();
-              }
-            }}
-            placeholder='Add context for the draft (optional)... e.g. "decline politely" or "suggest meeting next week"'
-            rows={2}
-            disabled={generating}
-            className="w-full text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none disabled:opacity-50"
-          />
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-gray-400 dark:text-gray-500">
-              {generating ? "Generating draft..." : "Cmd+Enter to generate"}
-            </span>
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded-md transition-colors disabled:opacity-50"
-            >
-              {generating && (
-                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-              )}
-              Generate Draft
-            </button>
-          </div>
-          {error && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{error}</p>}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Superhuman-style thread message
 function ThreadMessage({
@@ -4052,11 +3933,6 @@ export function EmailDetail({ isFullView = false }: EmailDetailProps) {
             </div>
           ))}
         </div>
-
-        {/* Generate Draft inline — shown when email needs reply but has no draft and no inline reply open */}
-        {latestReceivedEmail?.analysis?.needsReply &&
-          !draftEmail?.draft &&
-          !inlineReplyToEmailId && <GenerateDraftInline emailId={latestReceivedEmail.id} />}
 
         {/* Analysis section with priority override — uses latestReceivedEmail
              so the user's own sent reply doesn't override the thread's analysis */}
